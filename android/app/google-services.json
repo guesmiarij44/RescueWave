@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "322892282314",
+    "project_id": "rescuewave-98a23",
+    "storage_bucket": "rescuewave-98a23.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:322892282314:android:3d80b2f30180d4ab2f3733",
+        "android_client_info": {
+          "package_name": "com.example.bateau_sauveur"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYuD-OkSmFF4XB8JSGnwv0WMHFsYQ7fCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
