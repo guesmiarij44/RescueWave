@@ -1,0 +1,109 @@
+@startuml Diagramme de classes - RescueWave
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam class {
+  BackgroundColor #E8F4FD
+  BorderColor #0077B6
+  ArrowColor #0077B6
+  HeaderBackgroundColor #0077B6
+  HeaderFontColor white
+}
+skinparam enum {
+  BackgroundColor #D0EAF8
+  BorderColor #0077B6
+}
+skinparam note {
+  BackgroundColor #FFF9C4
+  BorderColor #FFB703
+}
+
+title Diagramme de classes — Application RescueWave
+
+enum UserRole {
+  adminPrincipal
+  adminSecondaire
+  maitreDuNauge
+}
+
+class AppUser {
+  + cin : String
+  + nom : String
+  + prenom : String
+  + role : UserRole
+  + adminCin : String?
+  ..
+  + {static} fromFirestore(doc : DocumentSnapshot) : AppUser
+  + toFirestore() : Map<String, dynamic>
+}
+
+class AlerteNoyade {
+  + id : String
+  + heure : DateTime
+  + lieu : String
+  + photoUrl : String?
+  + confirmee : bool
+  + traitee : bool
+  ..
+  + {static} fromFirestore(doc : DocumentSnapshot) : AlerteNoyade
+}
+
+class HistoriqueVictime {
+  + id : String
+  + date : DateTime
+  + age : int
+  + lieu : String
+  + description : String
+  + maitreCin : String
+  + survivant : bool
+  ..
+  + {static} fromFirestore(doc : DocumentSnapshot) : HistoriqueVictime
+}
+
+class AppState {
+  + currentUser : AppUser?
+  + users : List<AppUser>
+  + alertes : List<AlerteNoyade>
+  + historique : List<HistoriqueVictime>
+  + isLoading : bool
+  - _db : FirebaseFirestore
+  - _alertesSub : StreamSubscription?
+  - _historiqueSub : StreamSubscription?
+  - {static} motDePasseGeneral : String
+  ..
+  - _init() : Future<void>
+  - _loadUsers() : Future<void>
+  - _listenToAlertes() : void
+  - _listenToHistorique() : void
+  + login(cin, mdp) : bool
+  + logout() : void
+  + confirmerAlerte(id) : Future<void>
+  + traiterAlerte(id) : Future<void>
+  + ajouterMembre(user) : Future<void>
+  + supprimerMembre(cin) : Future<void>
+  + dispose() : void
+}
+
+class AppColors {
+  + {static} primary : Color
+  + {static} accent : Color
+  + {static} danger : Color
+  + {static} success : Color
+  + {static} warning : Color
+  + {static} dark : Color
+  + {static} surface : Color
+  + {static} surfaceLight : Color
+  + {static} text : Color
+  + {static} textMuted : Color
+}
+
+note top of AppState : Étend ChangeNotifier\n(pattern Observer)\nChaque widget rebuild\nvia AnimatedBuilder
+
+note right of AppUser : Document Firestore\nidentifié par le CIN\ncomme clé primaire
+
+AppUser --> UserRole : role
+AppState "1" o-- "0..*" AppUser : users
+AppState "1" o-- "0..*" AlerteNoyade : alertes
+AppState "1" o-- "0..*" HistoriqueVictime : historique
+AppState "1" o-- "0..1" AppUser : currentUser
+
+@enduml

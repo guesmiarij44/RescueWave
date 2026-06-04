@@ -1,0 +1,67 @@
+---
+title: Interface de connexion — LoginScreen (RescueWave)
+---
+flowchart TB
+    subgraph PHONE["📱 LoginScreen — Interface de connexion"]
+        direction TB
+
+        subgraph BG["Arrière-plan (Stack)"]
+            direction LR
+            G["🎨 Dégradé sombre\n0xFF020B18 → dark → 0xFF03184A"]
+            W["〰️ WavePainter\nAnimation vagues (4 s, repeat)"]
+            C["⭕ Cercles décoratifs\n(top-right ∅120 · top-left ∅80)"]
+        end
+
+        subgraph HEADER["En-tête"]
+            direction TB
+            LOGO_ICON["⭕ Logo circulaire\n🚢 Icon directions_boat_rounded\n(dégradé primary → accent + glow)"]
+            TITLE["RescueWave\n(fontSize 30, fontWeight w900)"]
+            SUBTITLE["Surveillance aquatique intelligente\n(fontSize 14, textMuted)"]
+        end
+
+        subgraph FORM["Formulaire (Card arrondie)"]
+            direction TB
+            CIN["🪪  Numéro CIN\n▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔\n(TextEditingController _cinCtrl)"]
+            MDP_OFF["🔒  Mot de passe  ·  ••••••••  👁\n(obscureText: !_mdpVisible)"]
+            MDP_ON["👁  Mot de passe  ·  azerty123\n(obscureText: false — si toggle activé)"]
+        end
+
+        subgraph STATES["État du bouton (conditionnel)"]
+            direction LR
+            LOAD["⏳ CircularProgressIndicator\n(_loading == true)"]
+            BTN[/"🔵  Se connecter\n(_loading == false)"\]
+        end
+
+        ERR{{"❌  CIN ou mot de passe incorrect.\n(_erreur != null — affiché sous le formulaire)"}}
+
+        FOOT["🔒  Accès réservé au personnel autorisé"]
+    end
+
+    BG --> HEADER
+    HEADER --> FORM
+    CIN --> MDP_OFF
+    MDP_OFF -.->|"toggle 👁"| MDP_ON
+    FORM --> STATES
+    STATES --> ERR
+    ERR -->|"_erreur = null\n(données valides)"| BTN_OK["✅ Redirige vers HomeScreen\n(notifyListeners → Consumer reconstruit)"]
+    STATES --> FOOT
+
+    style G         fill:#020B18,color:#7CA5BF,stroke:#0077B6
+    style W         fill:#03184A,color:#7CA5BF,stroke:#00B4D8,stroke-dasharray:4
+    style C         fill:#0D1B2A,color:#7CA5BF,stroke:#0077B6,stroke-dasharray:4
+    style LOGO_ICON fill:#0077B6,color:#fff,stroke:#00B4D8
+    style TITLE     fill:#03184A,color:#EAF4FB,stroke:#0077B6
+    style SUBTITLE  fill:#03184A,color:#7CA5BF,stroke:#0077B6
+    style CIN       fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style MDP_OFF   fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style MDP_ON    fill:#1B2A3A,color:#EAF4FB,stroke:#00B4D8
+    style LOAD      fill:#0D1B2A,color:#00B4D8,stroke:#00B4D8
+    style BTN       fill:#0077B6,color:#fff,stroke:#03071E
+    style ERR       fill:#EF233C,color:#fff,stroke:#C1121F
+    style BTN_OK    fill:#06D6A0,color:#03071E,stroke:#04A87D
+    style FOOT      fill:#0D1B2A,color:#7CA5BF,stroke:#0077B6
+    style BG        fill:#020B18,stroke:#00B4D8,stroke-dasharray:6
+    style HEADER    fill:#03184A,stroke:#0077B6
+    style FORM      fill:#0D1B2A,stroke:#0077B6
+    style STATES    fill:#0D1B2A,stroke:#0077B6
+    style PHONE     fill:#03071E,stroke:#00B4D8,stroke-width:3px

@@ -1,0 +1,45 @@
+@startuml Séquence - Création d'un compte membre
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequence {
+  ParticipantBackgroundColor #E8F4FD
+  ParticipantBorderColor #0077B6
+  ArrowColor #0077B6
+  ActorBackgroundColor #D0EAF8
+  ActorBorderColor #0077B6
+  LifeLineBorderColor #0077B6
+}
+skinparam noteBackgroundColor #FFF9C4
+skinparam noteBorderColor #FFB703
+
+title Création d'un compte membre — RescueWave
+
+actor "Administrateur" as Admin
+participant "Panneau\nAdmin" as UI
+participant "Formulaire\n_AddMemberDialog" as Form
+participant "AppState" as State
+database "Firestore\ncollection : users" as DB
+
+Admin -> UI : Clique sur\n"Ajouter un membre"
+UI -> Form : Ouvre le formulaire\ndans une boîte de dialogue
+note over Form : Champs : CIN, Nom,\nPrénom, Rôle (liste déroulante\nMaître-Nageur / Admin Secondaire)
+
+Admin -> Form : Remplit tous les champs\net sélectionne le rôle
+Admin -> Form : Clique sur "Ajouter"
+Form -> Form : Valide les champs\n(cin, nom, prenom non vides)
+
+alt Champs incomplets
+  Form --> Admin : Affiche "Tous les champs\nsont obligatoires"
+else Formulaire valide
+  Form -> State : ajouterMembre(AppUser)
+  State -> DB : SET users/{cin}\n{ cin, nom, prenom, role,\n  adminCin: admin.cin }
+  DB --> State : Document créé avec succès
+  State -> State : Ajoute le membre\nà la liste locale users
+  State -> State : notifyListeners()
+  State --> Form : Future complété
+  Form --> UI : Ferme le formulaire
+  UI --> Admin : Liste des membres\nmise à jour
+  note over Admin : Le nouveau membre peut\nse connecter immédiatement\navec son CIN
+end
+
+@enduml

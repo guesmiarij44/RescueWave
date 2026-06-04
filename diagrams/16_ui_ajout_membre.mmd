@@ -1,0 +1,49 @@
+---
+title: Formulaire d'ajout d'un nouveau membre — _AddMemberDialog (RescueWave)
+---
+flowchart TB
+    subgraph PHONE["📱 AdminPage + _AddMemberDialog"]
+        direction TB
+
+        APP["AppBar  |  🛡️ Administration  (arrière-plan)"]
+
+        subgraph BG["Arrière-plan atténué"]
+            BGC["🏆 Administrateur Principal  —  Karim Benali\n[ Liste membres... ]"]
+        end
+
+        subgraph OVERLAY["Modale — Ajouter un membre"]
+            direction TB
+
+            subgraph FORM["Formulaire _AddMemberDialog"]
+                direction TB
+                F1["🪪  CIN\n▔▔▔▔▔▔▔▔▔▔▔"]
+                F2["👤  Nom\n▔▔▔▔▔▔▔▔▔▔▔"]
+                F3["👤  Prénom\n▔▔▔▔▔▔▔▔▔▔▔"]
+                F4["Rôle  ▾\n[ Maître-Nageur  /  Admin Secondaire ]"]
+                ERR{{"❌  Tous les champs sont obligatoires\n(affiché si champ vide)"}}
+            end
+
+            subgraph ACTIONS["Boutons"]
+                direction LR
+                CANCEL["[ Annuler ]"] --- SAVE[/"[ Ajouter ]"\]
+            end
+        end
+    end
+
+    APP --> BG --> OVERLAY
+    F1 --> F2 --> F3 --> F4 --> ERR --> ACTIONS
+
+    style APP    fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style BGC    fill:#0D1B2A,color:#7CA5BF,stroke:#0077B6,stroke-dasharray:4
+    style F1     fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style F2     fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style F3     fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style F4     fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style ERR    fill:#EF233C,color:#fff,stroke:#C1121F
+    style CANCEL fill:#0D1B2A,color:#7CA5BF,stroke:#7CA5BF
+    style SAVE   fill:#0077B6,color:#fff,stroke:#03071E
+    style FORM    fill:#0D1B2A,stroke:#0077B6
+    style ACTIONS fill:#0D1B2A,stroke:#0077B6
+    style OVERLAY fill:#1B2A3A,stroke:#00B4D8,stroke-width:2px
+    style BG      fill:#0D1B2A,stroke:#0077B6,stroke-dasharray:4
+    style PHONE   fill:#03071E,stroke:#00B4D8,stroke-width:2px

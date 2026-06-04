@@ -1,0 +1,25 @@
+---
+title: Séquence — Consultation de l'historique des victimes (RescueWave)
+---
+sequenceDiagram
+    actor U as Utilisateur
+    participant Nav as Navigation (BottomBar)
+    participant Page as HistoriquePage
+    participant AS as AppState (StreamSubscription)
+    participant DB as Firestore (historique)
+
+    Note over AS,DB: Abonnement temps réel actif dès le démarrage<br/>(_listenToHistorique via snapshots())<br/>Collection triée par date décroissante
+
+    U->>Nav: Clique sur l'onglet "Historique"
+    Nav->>Page: Affiche HistoriquePage
+    Page->>AS: Lit historique (déjà synchronisé en mémoire)
+
+    alt Liste vide
+        Page-->>U: 📭 Affiche "Aucun historique"
+    else Données disponibles
+        Page-->>U: 📋 Liste des fiches triées par date DESC
+
+        Note over U: Chaque fiche contient :<br/>• Statut (🟢 Survie / 🔴 Décès)<br/>• Date de l'intervention<br/>• Âge de la victime<br/>• Lieu de l'incident<br/>• Description
+    end
+
+    Note over DB,AS: Toute nouvelle fiche ajoutée<br/>met à jour l'interface automatiquement<br/>(en temps réel, sans action de l'utilisateur)

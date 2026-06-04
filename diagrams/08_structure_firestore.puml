@@ -1,0 +1,83 @@
+@startuml Structure des collections Firestore - RescueWave
+skinparam roundcorner 12
+skinparam package {
+  BackgroundColor #E8F4FD
+  BorderColor #0077B6
+  FontColor #03071E
+}
+skinparam class {
+  BackgroundColor #F0F8FF
+  BorderColor #0077B6
+  ArrowColor #0077B6
+  HeaderBackgroundColor #00B4D8
+  HeaderFontColor white
+}
+skinparam note {
+  BackgroundColor #FFF9C4
+  BorderColor #FFB703
+}
+
+title Structure des collections Firebase Firestore — RescueWave
+
+package "Firebase Firestore" {
+
+  package "Collection : users" {
+    class "Document : {cin}" as UserDoc {
+      cin : String (clé du document)
+      nom : String
+      prenom : String
+      role : String
+      adminCin : String | null
+    }
+    note right of UserDoc
+      Chargée une seule fois
+      au démarrage de l'app.
+      Exemple de rôles :
+      "adminPrincipal"
+      "adminSecondaire"
+      "maitreDuNauge"
+    end note
+  }
+
+  package "Collection : alertes" {
+    class "Document : {alerteId}" as AlerteDoc {
+      heure : Timestamp
+      lieu : String
+      photoUrl : String | null
+      confirmee : Boolean (défaut : false)
+      traitee : Boolean (défaut : false)
+    }
+    note right of AlerteDoc
+      Écrit par le Raspberry Pi.
+      Abonnement temps réel actif
+      (snapshots ordonnés par
+      "heure" décroissant).
+    end note
+  }
+
+  package "Collection : historique" {
+    class "Document : {historiqueId}" as HistDoc {
+      date : Timestamp
+      age : Integer
+      lieu : String
+      description : String
+      maitreCin : String
+      survivant : Boolean
+    }
+    note right of HistDoc
+      Abonnement temps réel actif
+      (snapshots ordonnés par
+      "date" décroissant).
+    end note
+  }
+}
+
+note bottom
+  Toutes les collections sont abonnées
+  via StreamSubscription dans AppState.
+  Les mises à jour Firestore déclenchent
+  automatiquement un notifyListeners()
+  et un rebuild de l'interface.
+end note
+
+@enduml

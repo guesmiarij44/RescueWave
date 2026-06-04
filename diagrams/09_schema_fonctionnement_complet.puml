@@ -1,0 +1,61 @@
+@startuml Schéma du fonctionnement complet - RescueWave
+skinparam roundcorner 12
+skinparam activity {
+  BackgroundColor #E8F4FD
+  BorderColor #0077B6
+  ArrowColor #0077B6
+  StartColor #03071E
+  EndColor #EF233C
+  DiamondBackgroundColor #D0EAF8
+  DiamondBorderColor #0077B6
+}
+skinparam note {
+  BackgroundColor #FFF9C4
+  BorderColor #FFB703
+}
+
+title Schéma du fonctionnement complet du système RescueWave
+
+|#D0EAF8| Bateau (Raspberry Pi)|
+|#E8F8F5| Firebase Firestore|
+|#FFF3E0| Application Mobile|
+|#FCE4EC| Personnel de surveillance|
+
+|Bateau (Raspberry Pi)|
+start
+: **Étape 1**\nBateau autonome patrouille\ndans la zone surveillée;
+: **Étape 2**\nCaméra embarquée capture\nle flux vidéo en continu;
+: **Étape 3**\nModèle IA analyse\nchaque image du flux;
+
+if (Noyade détectée ?) then (oui)
+  : **Étape 4**\nRaspberry Pi génère\nune alerte Firestore\n{ heure, lieu, confirmee: false };
+  |Firebase Firestore|
+  : Enregistre le document\ndans la collection "alertes";
+  : Notifie tous les abonnés\n(StreamSnapshot actif);
+  |Application Mobile|
+  : **Étape 5**\nReçoit l'alerte en temps réel\nMet à jour la liste alertes;
+  : Reconstruit l'interface\n(notifyListeners);
+  |Personnel de surveillance|
+  : **Étape 6**\nVoit la nouvelle alerte\n(carte rouge) sur son écran;
+  : Clique "Confirmer"\npour prendre en charge;
+  |Application Mobile|
+  : Envoie mise à jour\nFirestore : confirmee = true;
+  |Firebase Firestore|
+  : Met à jour le document\nalerte;
+  |Personnel de surveillance|
+  : **Étape 7**\nEffectue l'intervention\nde sauvetage sur le terrain;
+  : Clique "Mission terminée"\naprès l'intervention;
+  |Application Mobile|
+  : Envoie mise à jour\nFirestore : traitee = true;
+  |Firebase Firestore|
+  : Met à jour le document\nalerte;
+  |Personnel de surveillance|
+  : Alerte clôturée\n(carte verte);
+  stop
+else (non)
+  |Bateau (Raspberry Pi)|
+  : Poursuit la surveillance\ncontinue;
+  -> retour à l'analyse;
+endif
+
+@enduml

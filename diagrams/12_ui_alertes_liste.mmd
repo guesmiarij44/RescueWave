@@ -1,0 +1,47 @@
+---
+title: Interface de la liste des alertes — AlertesPage (RescueWave)
+---
+flowchart TB
+    subgraph PHONE["📱 AlertesPage"]
+        direction TB
+
+        APP["AppBar  |  🔔 Alertes  [2]"]
+
+        subgraph A1["Alerte #ALT-0042  —  09:38:14"]
+            A1S["🔴 Détectée  ·  Zone A — Secteur Nord\n📍 36.7325° N, 3.0875° E\n[ ✅ Confirmer ]"]
+        end
+
+        subgraph A2["Alerte #ALT-0041  —  09:21:05"]
+            A2S["🟠 Mission confirmée  ·  Zone B — Plage Centrale\n📍 36.7291° N, 3.0861° E\n[ 🏁 Mission terminée ]"]
+        end
+
+        subgraph A3["Alerte #ALT-0040  —  08:55:42"]
+            A3S["🟢 Mission accomplie  ·  Zone C — Piscine Sud\n📍 36.7255° N, 3.0849° E"]
+        end
+
+        EMPTY{{"Si aucune alerte :\n✅  Aucune alerte en cours"}}
+
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊\nTableau"] --- N2["🔔 ●\nAlertes"] --- N3["📋\nHistorique"] --- N4["🛡️\nAdmin"]
+        end
+    end
+
+    APP --> A1 --> A2 --> A3
+    A3 -.->|"Liste vide"| EMPTY
+    A3 --> NAV
+
+    style APP   fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style A1S   fill:#1B2A3A,color:#EF233C,stroke:#EF233C
+    style A2S   fill:#1B2A3A,color:#FFB703,stroke:#FFB703
+    style A3S   fill:#1B2A3A,color:#06D6A0,stroke:#06D6A0
+    style A1    fill:#0D1B2A,stroke:#EF233C
+    style A2    fill:#0D1B2A,stroke:#FFB703
+    style A3    fill:#0D1B2A,stroke:#06D6A0
+    style EMPTY fill:#0D1B2A,color:#06D6A0,stroke:#06D6A0
+    style N2    fill:#0077B6,color:#fff,stroke:#03071E
+    style N1    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N3    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N4    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style NAV   fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px

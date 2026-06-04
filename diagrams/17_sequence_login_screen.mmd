@@ -1,0 +1,54 @@
+---
+title: Séquence — LoginScreen (RescueWave)
+---
+sequenceDiagram
+    actor U as Utilisateur
+    participant UI as LoginScreen (_LoginScreenState)
+    participant WAVE as WavePainter (AnimationController)
+    participant AS as AppState
+    participant DB as users (mémoire locale)
+
+    Note over UI,WAVE: initState() — démarrage de l'app
+    UI->>WAVE: _waveCtrl.repeat() (4 s, boucle infinie)
+    WAVE-->>UI: Animation vagues en arrière-plan
+
+    Note over U,UI: L'utilisateur voit l'écran de connexion
+    U->>UI: Saisit son numéro CIN (_cinCtrl)
+    U->>UI: Saisit son mot de passe (_mdpCtrl)
+
+    opt Afficher/masquer le mot de passe
+        U->>UI: Appuie sur l'icône 👁
+        UI->>UI: setState → _mdpVisible = !_mdpVisible
+    end
+
+    U->>UI: Appuie sur "Se connecter"
+    UI->>UI: setState → _loading = true, _erreur = null
+    UI->>UI: await Future.delayed(800 ms)<br/>(indicateur de chargement visible)
+
+    UI->>AS: login(cin.trim(), mdp.trim())
+
+    AS->>AS: Vérifie mdp == motDePasseGeneral
+
+    alt Mot de passe incorrect
+        AS-->>UI: return false
+        UI->>UI: setState → _loading = false<br/>_erreur = "CIN ou mot de passe incorrect."
+        UI-->>U: ❌ Message d'erreur affiché sous le formulaire
+    else Mot de passe valide
+        AS->>DB: Recherche AppUser où cin == cin saisi
+        alt CIN introuvable dans users
+            AS-->>UI: return false
+            UI->>UI: setState → _loading = false<br/>_erreur = "CIN ou mot de passe incorrect."
+            UI-->>U: ❌ Message d'erreur affiché sous le formulaire
+        else CIN trouvé
+            AS->>AS: currentUser = AppUser correspondant
+            AS->>AS: notifyListeners()
+            AS-->>UI: return true
+            Note over UI: _connexion() se termine<br/>sans setState(_loading=false)<br/>car l'arbre est reconstruit
+            Note over UI: RescueBoatApp écoute AppState<br/>via Consumer — se reconstruit
+            UI-->>U: ✅ Redirige vers HomeScreen<br/>(Dashboard selon le rôle)
+        end
+    end
+
+    Note over UI,WAVE: dispose() — si l'écran est détruit
+    UI->>WAVE: _waveCtrl.dispose()
+    UI->>UI: _cinCtrl.dispose(), _mdpCtrl.dispose()

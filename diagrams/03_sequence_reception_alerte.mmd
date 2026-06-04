@@ -1,0 +1,30 @@
+---
+title: Séquence — Réception d'une alerte de noyade en temps réel (RescueWave)
+---
+sequenceDiagram
+    participant RPi as Raspberry Pi (Bateau IA)
+    participant IA as Modèle IA (Détection)
+    participant DB as Firebase Firestore
+    participant AS as AppState (StreamSubscription)
+    participant UI as Interface Alertes
+    actor U as Personnel de surveillance
+
+    Note over RPi,IA: Surveillance aquatique continue — 24h/24
+
+    loop Analyse image par image
+        RPi->>IA: Transmet le flux vidéo
+        IA->>IA: Inférence du modèle de détection
+    end
+
+    IA->>RPi: 🚨 Noyade détectée !<br/>(score de confiance élevé)
+    RPi->>DB: Crée document dans alertes/ :<br/>{ heure, lieu, confirmee: false, traitee: false }
+
+    Note over DB,AS: Abonnement StreamSnapshot actif<br/>depuis le démarrage de l'app<br/>(_listenToAlertes via snapshots())
+
+    DB-->>AS: 📡 Événement QuerySnapshot<br/>(nouvelle alerte reçue)
+    AS->>AS: AlerteNoyade.fromFirestore()<br/>Ajoute à la liste alertes
+    AS->>AS: notifyListeners()
+    AS-->>UI: Reconstruit l'interface
+    UI-->>U: 🔴 Nouvelle alerte affichée<br/>(carte rouge, en haut de la liste)
+
+    Note over U: Alerte visible instantanément<br/>sur tous les appareils connectés

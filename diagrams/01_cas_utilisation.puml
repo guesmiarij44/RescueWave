@@ -1,0 +1,83 @@
+@startuml Diagramme de cas d'utilisation - RescueWave
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #E8F4FD
+  BorderColor #0077B6
+  ArrowColor #0077B6
+}
+skinparam actor {
+  BackgroundColor #D0EAF8
+  BorderColor #0077B6
+}
+skinparam roundcorner 12
+left to right direction
+
+actor "Administrateur\nPrincipal" as AP #lightblue
+actor "Administrateur\nSecondaire" as AS #lightcyan
+actor "Maître-Nageur\n(Sauveteur)" as MN #lightyellow
+actor "Raspberry Pi\n(Bateau IA)" as RPi #lightgreen
+
+rectangle "Système RescueWave" {
+
+  package "Accès commun" {
+    usecase "S'authentifier\n(CIN + mot de passe)" as UC_AUTH
+    usecase "Consulter le\ntableau de bord" as UC_DASH
+    usecase "Consulter les\nalertes en temps réel" as UC_ALERT
+    usecase "Confirmer\nune alerte" as UC_CONFIRM
+    usecase "Clôturer\nune alerte" as UC_CLOSE
+    usecase "Consulter\nl'historique des victimes" as UC_HIST
+    usecase "Se déconnecter" as UC_LOGOUT
+  }
+
+  package "Administration" {
+    usecase "Ajouter un membre\n(CIN, nom, rôle)" as UC_ADD
+    usecase "Révoquer l'accès\nd'un membre" as UC_DEL
+    usecase "Gérer les admins\nsecondaires" as UC_ADM
+  }
+
+  package "Sous-système IA" {
+    usecase "Analyser le flux vidéo\n(modèle IA)" as UC_IA
+    usecase "Générer une alerte\nautomatique dans Firestore" as UC_GEN
+    usecase "Transmettre la\nposition GPS" as UC_GPS
+  }
+}
+
+' Administrateur Principal
+AP --> UC_AUTH
+AP --> UC_DASH
+AP --> UC_ALERT
+AP --> UC_CONFIRM
+AP --> UC_CLOSE
+AP --> UC_HIST
+AP --> UC_ADD
+AP --> UC_DEL
+AP --> UC_ADM
+AP --> UC_LOGOUT
+
+' Administrateur Secondaire
+AS --> UC_AUTH
+AS --> UC_DASH
+AS --> UC_ALERT
+AS --> UC_CONFIRM
+AS --> UC_CLOSE
+AS --> UC_HIST
+AS --> UC_ADD
+AS --> UC_DEL
+AS --> UC_LOGOUT
+
+' Maître-Nageur
+MN --> UC_AUTH
+MN --> UC_DASH
+MN --> UC_ALERT
+MN --> UC_CONFIRM
+MN --> UC_CLOSE
+MN --> UC_HIST
+MN --> UC_LOGOUT
+
+' Raspberry Pi
+RPi --> UC_IA
+RPi --> UC_GPS
+UC_IA ..> UC_GEN : <<include>>
+
+@enduml

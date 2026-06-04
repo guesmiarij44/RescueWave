@@ -1,0 +1,43 @@
+@startuml Séquence - Réception d'une alerte de noyade
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequence {
+  ParticipantBackgroundColor #E8F4FD
+  ParticipantBorderColor #0077B6
+  ArrowColor #0077B6
+  ActorBackgroundColor #D0EAF8
+  ActorBorderColor #0077B6
+  LifeLineBorderColor #0077B6
+}
+skinparam noteBackgroundColor #FFF9C4
+skinparam noteBorderColor #FFB703
+
+title Réception d'une alerte de noyade — Temps réel
+
+participant "Raspberry Pi\n(Bateau IA)" as RPi
+participant "Modèle IA\n(Détection)" as IA
+database "Firebase\nFirestore" as DB
+participant "AppState\n(StreamSubscription)" as State
+participant "Interface\nAlertes" as UI
+actor "Personnel\nde surveillance" as U
+
+note over RPi,IA : Surveillance aquatique\ncontinue — 24h/24
+
+loop Analyse continue du flux vidéo
+  RPi -> IA : Transmet chaque image\ndu flux caméra
+  IA -> IA : Inférence du modèle\nde détection
+end
+
+IA -> RPi : Noyade détectée !\n(score de confiance élevé)
+RPi -> DB : Crée document dans\ncollection alertes :\n{ heure, lieu, confirmee: false,\n  traitee: false, photoUrl? }
+
+note over DB,State : Abonnement actif depuis\nle démarrage de l'application\n(_listenToAlertes via snapshots())
+
+DB --> State : Événement QuerySnapshot\n(nouvelle alerte détectée)
+State -> State : Parse AlerteNoyade.fromFirestore()\nAjoute à la liste alertes
+State -> State : notifyListeners()
+State --> UI : Reconstruit l'interface
+UI --> U : Affiche la nouvelle alerte\n(fond rouge, carte en haut de liste)
+note over U : Notification visible\ninstantanément sur\ntous les appareils connectés
+
+@enduml

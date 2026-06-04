@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagrammes — Chapitre Application Mobile RescueWave</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #03071E;
+      --surface: #0D1B2A;
+      --surface2: #1B2A3A;
+      --primary: #0077B6;
+      --accent: #00B4D8;
+      --text: #EAF4FB;
+      --muted: #7CA5BF;
+      --danger: #EF233C;
+      --success: #06D6A0;
+      --warning: #FFB703;
+      --border: rgba(0,119,182,0.3);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #020B18, var(--surface));
+      border-radius: 24px;
+      border: 1px solid var(--border);
+    }
+    header .logo {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: var(--accent);
+    }
+    header p {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+    .toc {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .toc a {
+      background: var(--surface2);
+      color: var(--accent);
+      text-decoration: none;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      border: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .toc a:hover { background: var(--primary); color: #fff; }
+
+    /* ─── SECTIONS ─── */
+    section {
+      margin-bottom: 64px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--border);
+    }
+    .section-number {
+      background: var(--primary);
+      color: #fff;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .section-header .badge {
+      margin-left: auto;
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .description {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      padding: 14px 18px;
+      border-radius: 0 12px 12px 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    /* ─── DIAGRAM CARD ─── */
+    .diagram-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px;
+      overflow-x: auto;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .diagram-card .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+    .diagram-caption {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center;
+      margin-top: 80px;
+      padding: 28px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🚢</div>
+  <h1>RescueWave</h1>
+  <p>Diagrammes — Chapitre : Développement de l'Application Mobile</p>
+  <p style="margin-top:4px; color:var(--warning); font-size:0.8rem;">
+    Générés à partir du code source Flutter · <code>lib/main.dart</code>
+  </p>
+  <nav class="toc">
+    <a href="#uc">Cas d'utilisation</a>
+    <a href="#seq-auth">Authentification</a>
+    <a href="#seq-alerte">Réception alerte</a>
+    <a href="#seq-confirm">Confirmation alerte</a>
+    <a href="#seq-compte">Création compte</a>
+    <a href="#seq-hist">Historique</a>
+    <a href="#classes">Diagramme de classes</a>
+    <a href="#firestore">Structure Firestore</a>
+    <a href="#schema">Schéma complet</a>
+  </nav>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     1. DIAGRAMME DE CAS D'UTILISATION
+═══════════════════════════════════════════════ -->
+<section id="uc">
+  <div class="section-header">
+    <div class="section-number">1</div>
+    <h2>Diagramme de cas d'utilisation</h2>
+    <span class="badge">§ 2.1 — flowchart</span>
+  </div>
+  <div class="description">
+    Représente les interactions entre les 4 acteurs du système (Administrateur Principal,
+    Administrateur Secondaire, Maître-Nageur, Raspberry Pi) et l'ensemble des fonctionnalités
+    de l'application RescueWave.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+---
+title: Diagramme de cas d'utilisation — RescueWave
+---
+flowchart LR
+    AP["👤 Administrateur\nPrincipal"]
+    AS["👤 Administrateur\nSecondaire"]
+    MN["👤 Maître-Nageur\n(Sauveteur)"]
+    RPi["🤖 Raspberry Pi\n(Bateau IA)"]
+
+    subgraph SYS["Système RescueWave"]
+        subgraph ACC["Accès commun"]
+            UC1(["S'authentifier\nCIN + mot de passe"])
+            UC2(["Consulter le\ntableau de bord"])
+            UC3(["Recevoir les alertes\nen temps réel"])
+            UC4(["Confirmer\nune alerte"])
+            UC5(["Clôturer\nune alerte"])
+            UC6(["Consulter\nl'historique des victimes"])
+            UC7(["Se déconnecter"])
+        end
+        subgraph ADM["Administration"]
+            UC8(["Ajouter\nun membre"])
+            UC9(["Révoquer l'accès\nd'un membre"])
+            UC10(["Gérer les admins\nsecondaires"])
+        end
+        subgraph IA["Sous-système IA"]
+            UC11(["Analyser le flux\nvidéo en continu"])
+            UC12(["Générer une alerte\nautomatique Firestore"])
+            UC13(["Transmettre la\nposition GPS"])
+        end
+    end
+
+    AP --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7
+    AP --> UC8 & UC9 & UC10
+    AS --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7
+    AS --> UC8 & UC9
+    MN --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7
+    RPi --> UC11 & UC13
+    UC11 -->|"include"| UC12
+
+    style AP fill:#0077B6,color:#fff,stroke:#03071E
+    style AS fill:#00B4D8,color:#fff,stroke:#03071E
+    style MN fill:#06D6A0,color:#03071E,stroke:#03071E
+    style RPi fill:#FFB703,color:#03071E,stroke:#03071E
+    style SYS fill:#f0f8ff,stroke:#0077B6
+    style ACC fill:#e8f4fd,stroke:#0077B6
+    style ADM fill:#fff3e0,stroke:#FFB703
+    style IA fill:#e8f8f5,stroke:#06D6A0
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 1 — Diagramme de cas d'utilisation de l'application RescueWave</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     2. SÉQUENCE — AUTHENTIFICATION
+═══════════════════════════════════════════════ -->
+<section id="seq-auth">
+  <div class="section-header">
+    <div class="section-number">2</div>
+    <h2>Séquence — Authentification utilisateur</h2>
+    <span class="badge">§ 2.4.1 — sequenceDiagram</span>
+  </div>
+  <div class="description">
+    L'utilisateur saisit son CIN + mot de passe commun. <code>AppState.login()</code> vérifie
+    d'abord le mot de passe (<code>motDePasseGeneral = 'sauvetage2026'</code>) puis cherche
+    le CIN dans la liste <code>users</code> déjà chargée depuis Firestore au démarrage.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+sequenceDiagram
+    actor U as Utilisateur
+    participant S as Écran Connexion
+    participant AS as AppState
+    participant DB as Firestore (users)
+
+    U->>S: Saisit son CIN + mot de passe
+    S->>AS: login(cin, motDePasse)
+    AS->>AS: Vérifie motDePasse == motDePasseGeneral
+
+    alt Mot de passe incorrect
+        AS-->>S: Retourne false
+        S-->>U: ❌ "CIN ou mot de passe incorrect"
+    else Mot de passe valide
+        Note over AS: La liste users est déjà<br/>chargée en mémoire<br/>depuis le démarrage
+        AS->>AS: Recherche users où u.cin == cin
+
+        alt CIN introuvable
+            AS-->>S: Retourne false
+            S-->>U: ❌ "CIN ou mot de passe incorrect"
+        else CIN trouvé
+            AS->>AS: currentUser = AppUser trouvé
+            AS->>AS: notifyListeners()
+            AS-->>S: Retourne true
+            Note over S: RescueBoatApp reconstruit<br/>son arbre de widgets
+            S-->>U: ✅ Redirige vers HomeScreen<br/>(Dashboard selon le rôle)
+        end
+    end
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 2 — Diagramme de séquence : Authentification utilisateur</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     3. SÉQUENCE — RÉCEPTION D'UNE ALERTE
+═══════════════════════════════════════════════ -->
+<section id="seq-alerte">
+  <div class="section-header">
+    <div class="section-number">3</div>
+    <h2>Séquence — Réception d'une alerte de noyade</h2>
+    <span class="badge">§ 2.4.2 — sequenceDiagram</span>
+  </div>
+  <div class="description">
+    Flux de bout en bout depuis la détection par le modèle IA sur le Raspberry Pi jusqu'à
+    l'affichage de l'alerte (carte rouge) sur tous les appareils via le
+    <code>StreamSubscription</code> Firestore de <code>AppState._listenToAlertes()</code>.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+sequenceDiagram
+    participant RPi as Raspberry Pi (Bateau IA)
+    participant IA as Modèle IA (Détection)
+    participant DB as Firebase Firestore
+    participant AS as AppState (StreamSubscription)
+    participant UI as Interface Alertes
+    actor U as Personnel de surveillance
+
+    Note over RPi,IA: Surveillance aquatique continue — 24h/24
+
+    loop Analyse image par image
+        RPi->>IA: Transmet le flux vidéo
+        IA->>IA: Inférence du modèle de détection
+    end
+
+    IA->>RPi: 🚨 Noyade détectée !<br/>(score de confiance élevé)
+    RPi->>DB: Crée document dans alertes/<br/>{ heure, lieu, confirmee: false, traitee: false }
+
+    Note over DB,AS: Abonnement StreamSnapshot actif<br/>depuis le démarrage de l'app<br/>(_listenToAlertes via snapshots())
+
+    DB-->>AS: 📡 Événement QuerySnapshot<br/>(nouvelle alerte reçue)
+    AS->>AS: AlerteNoyade.fromFirestore()<br/>Ajoute à la liste alertes
+    AS->>AS: notifyListeners()
+    AS-->>UI: Reconstruit l'interface
+    UI-->>U: 🔴 Nouvelle alerte affichée<br/>(carte rouge, en haut de la liste)
+
+    Note over U: Alerte visible instantanément<br/>sur tous les appareils connectés
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 3 — Diagramme de séquence : Réception d'une alerte de noyade en temps réel</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     4. SÉQUENCE — CONFIRMATION & CLÔTURE
+═══════════════════════════════════════════════ -->
+<section id="seq-confirm">
+  <div class="section-header">
+    <div class="section-number">4</div>
+    <h2>Séquence — Confirmation et clôture d'une alerte</h2>
+    <span class="badge">§ 2.4.3 — sequenceDiagram</span>
+  </div>
+  <div class="description">
+    Deux étapes successives : <strong>Confirmer</strong> (met <code>confirmee: true</code> → carte orange)
+    puis <strong>Mission terminée</strong> (met <code>traitee: true</code> → carte verte).
+    Chaque mise à jour Firestore déclenche automatiquement le StreamSnapshot qui reconstruit l'UI.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+sequenceDiagram
+    actor U as Maître-Nageur (ou Administrateur)
+    participant UI as Interface Alertes
+    participant AS as AppState
+    participant DB as Firestore (alertes)
+
+    Note over UI: Alerte visible — statut "Détectée" 🔴
+
+    rect rgb(255, 243, 224)
+        Note over U,DB: ── Étape 1 : Prise en charge ──
+        U->>UI: Clique "Confirmer"
+        UI->>AS: confirmerAlerte(alerte.id)
+        AS->>DB: UPDATE alertes/{id}<br/>{ confirmee: true }
+        DB-->>AS: ✅ Succès
+        Note over DB,AS: Le StreamSnapshot déclenche<br/>automatiquement une mise à jour
+        AS->>AS: Reçoit snapshot mis à jour<br/>notifyListeners()
+        AS-->>UI: Reconstruit la carte alerte
+        UI-->>U: Statut → "Mission confirmée" 🟠
+    end
+
+    Note over U: Le sauveteur se rend<br/>sur le lieu de l'incident
+
+    rect rgb(232, 245, 233)
+        Note over U,DB: ── Étape 2 : Clôture après intervention ──
+        U->>UI: Clique "Mission terminée"
+        UI->>AS: traiterAlerte(alerte.id)
+        AS->>DB: UPDATE alertes/{id}<br/>{ traitee: true }
+        DB-->>AS: ✅ Succès
+        AS->>AS: Reçoit snapshot mis à jour<br/>notifyListeners()
+        AS-->>UI: Reconstruit la carte alerte
+        UI-->>U: Statut → "Mission accomplie" 🟢
+    end
+
+    Note over U: L'alerte est archivée<br/>et disparaît des alertes actives
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 4 — Diagramme de séquence : Confirmation et clôture d'une alerte</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     5. SÉQUENCE — CRÉATION D'UN COMPTE
+═══════════════════════════════════════════════ -->
+<section id="seq-compte">
+  <div class="section-header">
+    <div class="section-number">5</div>
+    <h2>Séquence — Création d'un compte membre</h2>
+    <span class="badge">§ 2.4.4 — sequenceDiagram</span>
+  </div>
+  <div class="description">
+    L'administrateur ouvre <code>_AddMemberDialog</code>, remplit CIN / Nom / Prénom / Rôle et
+    valide. <code>AppState.ajouterMembre()</code> écrit le document dans
+    <code>Firestore users/{cin}</code> et met à jour la liste locale.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+sequenceDiagram
+    actor A as Administrateur
+    participant UI as Panneau Admin
+    participant F as Formulaire _AddMemberDialog
+    participant AS as AppState
+    participant DB as Firestore (users)
+
+    A->>UI: Clique "Ajouter un membre"
+    UI->>F: Ouvre le formulaire (boîte de dialogue)
+
+    Note over F: Champs : CIN, Nom, Prénom<br/>Rôle (liste déroulante :<br/>Maître-Nageur / Admin Secondaire)
+
+    A->>F: Remplit tous les champs et sélectionne le rôle
+    A->>F: Clique "Ajouter"
+    F->>F: Valide les champs (cin, nom, prenom non vides)
+
+    alt Champs incomplets
+        F-->>A: ❌ "Tous les champs sont obligatoires"
+    else Formulaire valide
+        F->>AS: ajouterMembre(AppUser)
+        AS->>DB: SET users/{cin}<br/>{ cin, nom, prenom, role, adminCin }
+        DB-->>AS: ✅ Document créé avec succès
+        AS->>AS: Ajoute le membre à la liste locale users
+        AS->>AS: notifyListeners()
+        AS-->>F: Future complété
+        F-->>UI: Ferme le formulaire
+        UI-->>A: ✅ Liste des membres mise à jour
+
+        Note over A: Le nouveau membre peut se connecter<br/>immédiatement avec son CIN
+    end
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 5 — Diagramme de séquence : Création d'un compte membre</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     6. SÉQUENCE — CONSULTATION DE L'HISTORIQUE
+═══════════════════════════════════════════════ -->
+<section id="seq-hist">
+  <div class="section-header">
+    <div class="section-number">6</div>
+    <h2>Séquence — Consultation de l'historique des victimes</h2>
+    <span class="badge">§ 2.4.5 — sequenceDiagram</span>
+  </div>
+  <div class="description">
+    L'abonnement <code>_listenToHistorique()</code> est actif dès le démarrage de l'app.
+    Quand l'utilisateur navigue vers <code>HistoriquePage</code>, les données sont déjà en
+    mémoire et s'affichent instantanément, triées par date décroissante.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+sequenceDiagram
+    actor U as Utilisateur
+    participant Nav as Navigation (BottomBar)
+    participant Page as HistoriquePage
+    participant AS as AppState (StreamSubscription)
+    participant DB as Firestore (historique)
+
+    Note over AS,DB: Abonnement temps réel actif dès le démarrage<br/>(_listenToHistorique via snapshots())<br/>Collection triée par date décroissante
+
+    U->>Nav: Clique sur l'onglet "Historique"
+    Nav->>Page: Affiche HistoriquePage
+    Page->>AS: Lit historique (déjà synchronisé en mémoire)
+
+    alt Liste vide
+        Page-->>U: 📭 Affiche "Aucun historique"
+    else Données disponibles
+        Page-->>U: 📋 Liste des fiches triées par date DESC
+
+        Note over U: Chaque fiche contient :<br/>• Statut (🟢 Survie / 🔴 Décès)<br/>• Date de l'intervention<br/>• Âge de la victime<br/>• Lieu de l'incident<br/>• Description
+    end
+
+    Note over DB,AS: Toute nouvelle fiche ajoutée<br/>met à jour l'interface automatiquement<br/>(en temps réel, sans action de l'utilisateur)
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 6 — Diagramme de séquence : Consultation de l'historique des victimes</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     7. DIAGRAMME DE CLASSES
+═══════════════════════════════════════════════ -->
+<section id="classes">
+  <div class="section-header">
+    <div class="section-number">7</div>
+    <h2>Diagramme de classes</h2>
+    <span class="badge">§ 2.5 — classDiagram</span>
+  </div>
+  <div class="description">
+    Structure statique de l'application : classes de données Dart (<code>AppUser</code>,
+    <code>AlerteNoyade</code>, <code>HistoriqueVictime</code>), gestion d'état
+    (<code>AppState extends ChangeNotifier</code>) et l'énumération <code>UserRole</code>.
+    Chaque classe possède des méthodes <code>fromFirestore()</code> / <code>toFirestore()</code>
+    pour la sérialisation.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+classDiagram
+    class UserRole {
+        <<enumeration>>
+        adminPrincipal
+        adminSecondaire
+        maitreDuNauge
+    }
+
+    class AppUser {
+        +String cin
+        +String nom
+        +String prenom
+        +UserRole role
+        +String? adminCin
+        +fromFirestore(doc) AppUser$
+        +toFirestore() Map
+    }
+
+    class AlerteNoyade {
+        +String id
+        +DateTime heure
+        +String lieu
+        +String? photoUrl
+        +bool confirmee
+        +bool traitee
+        +fromFirestore(doc) AlerteNoyade$
+    }
+
+    class HistoriqueVictime {
+        +String id
+        +DateTime date
+        +int age
+        +String lieu
+        +String description
+        +String maitreCin
+        +bool survivant
+        +fromFirestore(doc) HistoriqueVictime$
+    }
+
+    class AppState {
+        +AppUser? currentUser
+        +List~AppUser~ users
+        +List~AlerteNoyade~ alertes
+        +List~HistoriqueVictime~ historique
+        +bool isLoading
+        -FirebaseFirestore _db
+        -StreamSubscription _alertesSub
+        -StreamSubscription _historiqueSub
+        -String motDePasseGeneral$
+        -_init() Future
+        -_loadUsers() Future
+        -_listenToAlertes() void
+        -_listenToHistorique() void
+        +login(cin, mdp) bool
+        +logout() void
+        +confirmerAlerte(id) Future
+        +traiterAlerte(id) Future
+        +ajouterMembre(user) Future
+        +supprimerMembre(cin) Future
+        +dispose() void
+    }
+
+    class AppColors {
+        <<utility>>
+        +Color primary$
+        +Color accent$
+        +Color danger$
+        +Color success$
+        +Color warning$
+        +Color dark$
+        +Color surface$
+        +Color surfaceLight$
+        +Color text$
+        +Color textMuted$
+    }
+
+    AppUser --> UserRole : role
+    AppState "1" o-- "0..*" AppUser : users
+    AppState "1" o-- "0..*" AlerteNoyade : alertes
+    AppState "1" o-- "0..*" HistoriqueVictime : historique
+    AppState "1" o-- "0..1" AppUser : currentUser
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 7 — Diagramme de classes de l'application RescueWave</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     8. STRUCTURE FIRESTORE
+═══════════════════════════════════════════════ -->
+<section id="firestore">
+  <div class="section-header">
+    <div class="section-number">8</div>
+    <h2>Structure des collections Firestore</h2>
+    <span class="badge">§ 3.3.1 — flowchart</span>
+  </div>
+  <div class="description">
+    Trois collections NoSQL : <code>users</code> (chargée une fois au démarrage),
+    <code>alertes</code> (stream temps réel écrit par le RPi), <code>historique</code>
+    (stream temps réel écrit par les sauveteurs). Les flux bidirectionnels garantissent
+    la synchronisation instantanée entre tous les appareils.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TB
+    RPi["🤖 Raspberry Pi\n(Bateau IA)"]
+    APP["📱 Application Mobile\n(AppState)"]
+
+    subgraph FB["🔥 Firebase Firestore"]
+        subgraph CU["📁 Collection : users"]
+            UD["📄 Document clé : cin\n─────────────────────\ncin : String\nnom : String\nprenom : String\nrole : String\nadminCin : String | null"]
+        end
+
+        subgraph CA["📁 Collection : alertes"]
+            AD["📄 Document clé : alerteId\n─────────────────────\nheure : Timestamp\nlieu : String\nphotoUrl : String | null\nconfirmee : Boolean\ntraitee : Boolean"]
+        end
+
+        subgraph CH["📁 Collection : historique"]
+            HD["📄 Document clé : historiqueId\n─────────────────────\ndate : Timestamp\nage : Integer\nlieu : String\ndescription : String\nmaitreCin : String\nsurvivant : Boolean"]
+        end
+    end
+
+    RPi -- "Écrit les alertes (IA)" --> AD
+    APP -- "SET / DELETE" --> UD
+    APP -- "UPDATE confirmee / traitee" --> AD
+    APP -- "SET (fiche victime)" --> HD
+    AD -- "StreamSnapshot temps réel" --> APP
+    HD -- "StreamSnapshot temps réel" --> APP
+    UD -- "Lecture unique au démarrage" --> APP
+
+    style FB fill:#fff8f0,stroke:#FF6B35,stroke-width:2px
+    style CU fill:#e8f4fd,stroke:#0077B6
+    style CA fill:#fce4ec,stroke:#EF233C
+    style CH fill:#e8f8f5,stroke:#06D6A0
+    style RPi fill:#FFB703,color:#03071E,stroke:#03071E
+    style APP fill:#0077B6,color:#fff,stroke:#03071E
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 8 — Structure des collections Firestore de RescueWave</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     9. SCHÉMA DU FONCTIONNEMENT COMPLET
+═══════════════════════════════════════════════ -->
+<section id="schema">
+  <div class="section-header">
+    <div class="section-number">9</div>
+    <h2>Schéma du fonctionnement complet du système</h2>
+    <span class="badge">§ 5 — flowchart</span>
+  </div>
+  <div class="description">
+    Vue d'ensemble des 10 étapes du flux complet : de la patrouille du bateau autonome
+    jusqu'à l'enregistrement de la fiche victime dans l'historique Firestore, en passant
+    par la détection IA, la génération de l'alerte, la réception temps réel et l'intervention
+    du sauveteur sur le terrain.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TD
+    A1["🚢 Étape 1\nBateau autonome patrouille\ndans la zone surveillée"]
+    A2["📷 Étape 2\nCaméra embarquée capture\nle flux vidéo en continu"]
+    A3["🤖 Étape 3\nModèle IA analyse\nchaque image du flux"]
+
+    DEC{{"🔍 Noyade\ndétectée ?"}}
+
+    A4["📡 Étape 4\nRaspberry Pi génère une alerte\ndans Firestore\n{ heure, lieu, confirmee: false }"]
+    A5["🔔 Étape 5\nApplication mobile reçoit\nl'alerte en temps réel\n(StreamSnapshot)"]
+    A6["📱 Étape 6\nAlerte affichée sur l'interface\ndu personnel de surveillance\n(carte rouge 🔴)"]
+    A7["✅ Étape 7\nSauveteur clique 'Confirmer'\nStatut → 'Mission confirmée' 🟠"]
+    A8["🏊 Étape 8\nSauveteur intervient\nsur le terrain"]
+    A9["🏁 Étape 9\nSauveteur clique 'Mission terminée'\nStatut → 'Mission accomplie' 🟢"]
+    A10["📋 Étape 10\nFiche victime enregistrée\ndans l'historique Firestore"]
+
+    CONT["🔄 Surveillance continue\n(retour à l'analyse)"]
+
+    A1 --> A2 --> A3 --> DEC
+    DEC -->|"✅ Oui"| A4
+    DEC -->|"❌ Non"| CONT
+    CONT --> A1
+    A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10
+
+    style A1 fill:#0D1B2A,color:#fff,stroke:#0077B6
+    style A2 fill:#0D1B2A,color:#fff,stroke:#0077B6
+    style A3 fill:#0D1B2A,color:#fff,stroke:#0077B6
+    style DEC fill:#FFB703,color:#03071E,stroke:#FF8800
+    style A4 fill:#1B2A3A,color:#fff,stroke:#00B4D8
+    style A5 fill:#1B2A3A,color:#fff,stroke:#00B4D8
+    style A6 fill:#EF233C,color:#fff,stroke:#C1121F
+    style A7 fill:#FFB703,color:#03071E,stroke:#FF8800
+    style A8 fill:#0077B6,color:#fff,stroke:#03071E
+    style A9 fill:#06D6A0,color:#03071E,stroke:#04A87D
+    style A10 fill:#06D6A0,color:#03071E,stroke:#04A87D
+    style CONT fill:#1B2A3A,color:#fff,stroke:#7CA5BF
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 9 — Schéma du fonctionnement complet du système RescueWave</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 4 — INTERFACES UTILISATEUR (Wireframes)
+═══════════════════════════════════════════════ -->
+<div style="border-top:2px solid var(--border);margin:40px 0 32px;padding-top:32px;text-align:center;">
+  <h2 style="color:var(--accent);font-size:1.4rem;letter-spacing:1px;">Section 4 — Aperçu visuel de l'application mobile</h2>
+  <p style="color:var(--muted);font-size:.88rem;margin-top:6px;">Wireframes Mermaid des interfaces (§ 4.1 à § 4.5)</p>
+</div>
+
+<!-- 10 — Interface de connexion -->
+<section id="ui-login">
+  <div class="section-header">
+    <div class="section-number">10</div>
+    <h2>Interface de connexion</h2>
+    <span class="badge">§ 4.1 — LoginScreen</span>
+  </div>
+  <div class="description">
+    Point d'entrée commun à tous les utilisateurs. Formulaire CIN + mot de passe, fond animé
+    avec effet de vagues, message d'erreur en cas de saisie incorrecte.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TB
+    subgraph PHONE["📱 LoginScreen"]
+        direction TB
+        LOGO["🚢 RescueWave\nSystème de surveillance aquatique"]
+        subgraph CARD["Formulaire de connexion"]
+            direction TB
+            CIN["🪪  Numéro CIN\n▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"]
+            MDP["🔒  Mot de passe\n▔▔▔▔▔▔▔▔▔▔▔▔▔  👁"]
+            ERR{{"❌  CIN ou mot de passe incorrect\n(affiché si échec)"}}
+            BTN[/"▶  Se connecter"\]
+        end
+        FOOT["🔒  Accès sécurisé — Personnel autorisé uniquement"]
+    end
+    LOGO --> CARD
+    CIN --> MDP --> ERR
+    ERR -->|"Données valides"| BTN
+    CARD --> FOOT
+    style LOGO  fill:#03184A,color:#EAF4FB,stroke:#0077B6
+    style CIN   fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style MDP   fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style ERR   fill:#EF233C,color:#fff,stroke:#C1121F
+    style BTN   fill:#0077B6,color:#fff,stroke:#03071E
+    style FOOT  fill:#0D1B2A,color:#7CA5BF,stroke:#0077B6
+    style CARD  fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 10 — Interface de connexion de RescueWave</p>
+</section>
+
+<!-- 11 — Tableau de bord -->
+<section id="ui-dashboard">
+  <div class="section-header">
+    <div class="section-number">11</div>
+    <h2>Interface du tableau de bord</h2>
+    <span class="badge">§ 4.2 — DashboardPage</span>
+  </div>
+  <div class="description">
+    Page centrale après connexion : statut du bateau, 3 compteurs statistiques,
+    carte GPS de position, aperçu de la dernière alerte non traitée.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TB
+    subgraph PHONE["📱 DashboardPage"]
+        direction TB
+        HDR["👤 Bienvenue, Ahmed  ·  Administrateur Principal\n                                                    ⬆ Déconnexion"]
+        subgraph BOAT["Carte statut bateau"]
+            BS["🚢  Bateau Sauveteur\n🟢 Caméra IA  🟢 GPS  🟡 Batterie 72%  🟢 WiFi"]
+        end
+        subgraph STATS["Statistiques"]
+            direction LR
+            S1["⚠️\n2\nAlertes actives"] --- S2["🤝\n14\nInterventions"] --- S3["💚\n12\nSauvés"]
+        end
+        subgraph GPS["Carte GPS — Position du bateau"]
+            GM["[ 🗺️  Carte interactive ]\n📍 36.7325° N, 3.0875° E · 09:41:22"]
+        end
+        subgraph ALERT["🚨 Dernière alerte non traitée"]
+            LA["🔴 Zone A — Secteur Nord  |  09:38  |  Réf. #ALT-0042"]
+        end
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊 Tableau●"] --- N2["🔔² Alertes"] --- N3["📋 Historique"] --- N4["🛡️ Admin"]
+        end
+    end
+    HDR --> BOAT --> STATS --> GPS --> ALERT --> NAV
+    style HDR  fill:#03184A,color:#EAF4FB,stroke:#0077B6
+    style BS   fill:#0A2342,color:#EAF4FB,stroke:#0077B6
+    style S1   fill:#1B2A3A,color:#EF233C,stroke:#EF233C
+    style S2   fill:#1B2A3A,color:#00B4D8,stroke:#00B4D8
+    style S3   fill:#1B2A3A,color:#06D6A0,stroke:#06D6A0
+    style GM   fill:#0d2137,color:#EAF4FB,stroke:#0077B6
+    style LA   fill:#1B2A3A,color:#EF233C,stroke:#EF233C
+    style N1   fill:#0077B6,color:#fff,stroke:#03071E
+    style N2   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N3   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N4   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style BOAT  fill:#0D1B2A,stroke:#0077B6
+    style STATS fill:#0D1B2A,stroke:#0077B6
+    style GPS   fill:#0D1B2A,stroke:#0077B6
+    style ALERT fill:#0D1B2A,stroke:#EF233C
+    style NAV   fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 11 — Interface du tableau de bord</p>
+</section>
+
+<!-- 12 — Liste des alertes -->
+<section id="ui-alertes">
+  <div class="section-header">
+    <div class="section-number">12</div>
+    <h2>Interface de la liste des alertes</h2>
+    <span class="badge">§ 4.3 — AlertesPage</span>
+  </div>
+  <div class="description">
+    Liste temps réel de toutes les alertes. Code couleur : 🔴 non confirmée · 🟠 en cours · 🟢 clôturée.
+    Bouton contextuel selon le statut : « Confirmer » ou « Mission terminée ».
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TB
+    subgraph PHONE["📱 AlertesPage"]
+        direction TB
+        APP["AppBar  |  🔔 Alertes  [2]"]
+        subgraph A1["Alerte #ALT-0042  —  09:38:14"]
+            A1S["🔴 Détectée  ·  Zone A — Secteur Nord\n📍 36.7325° N, 3.0875° E\n[ ✅ Confirmer ]"]
+        end
+        subgraph A2["Alerte #ALT-0041  —  09:21:05"]
+            A2S["🟠 Mission confirmée  ·  Zone B — Plage Centrale\n📍 36.7291° N, 3.0861° E\n[ 🏁 Mission terminée ]"]
+        end
+        subgraph A3["Alerte #ALT-0040  —  08:55:42"]
+            A3S["🟢 Mission accomplie  ·  Zone C — Piscine Sud\n📍 36.7255° N, 3.0849° E"]
+        end
+        EMPTY{{"Si aucune alerte : ✅  Aucune alerte en cours"}}
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊 Tableau"] --- N2["🔔● Alertes"] --- N3["📋 Historique"] --- N4["🛡️ Admin"]
+        end
+    end
+    APP --> A1 --> A2 --> A3
+    A3 -.->|"Liste vide"| EMPTY
+    A3 --> NAV
+    style APP  fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style A1S  fill:#1B2A3A,color:#EF233C,stroke:#EF233C
+    style A2S  fill:#1B2A3A,color:#FFB703,stroke:#FFB703
+    style A3S  fill:#1B2A3A,color:#06D6A0,stroke:#06D6A0
+    style A1   fill:#0D1B2A,stroke:#EF233C
+    style A2   fill:#0D1B2A,stroke:#FFB703
+    style A3   fill:#0D1B2A,stroke:#06D6A0
+    style EMPTY fill:#0D1B2A,color:#06D6A0,stroke:#06D6A0
+    style N2   fill:#0077B6,color:#fff,stroke:#03071E
+    style N1   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N3   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N4   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style NAV  fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 12 — Interface de la liste des alertes</p>
+</section>
+
+<!-- 13 — Alerte détaillée -->
+<section id="ui-alerte-detail">
+  <div class="section-header">
+    <div class="section-number">13</div>
+    <h2>Interface d'une alerte détaillée avec boutons d'action</h2>
+    <span class="badge">§ 4.3 — _AlerteCard</span>
+  </div>
+  <div class="description">
+    Carte détaillée avec heure, lieu, coordonnées GPS, référence et capture caméra (optionnel).
+    Bouton <strong>Confirmer</strong> (rouge→orange) puis <strong>Mission terminée</strong> (orange→vert).
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TB
+    subgraph PHONE["📱 _AlerteCard — Détail alerte"]
+        direction TB
+        APP["AppBar  |  🔔 Alertes"]
+        subgraph CARD_RED["Alerte #ALT-0042  —  🔴 Détectée (non confirmée)"]
+            direction TB
+            INFO1["🕐  Heure de détection : 09:38:14"]
+            INFO2["📍  Zone A — Secteur Nord · 36.7325° N, 3.0875° E"]
+            INFO3["🆔  Référence : #ALT-0042"]
+            PHOTO["📷  [ Capture caméra IA disponible ]"]
+            BTN1[/"✅  Confirmer la prise en charge"\]
+        end
+        subgraph CARD_ORA["Alerte #ALT-0041  —  🟠 Mission confirmée (en cours)"]
+            direction TB
+            INFO4["🕐  09:21:05  ·  📍 Zone B — Plage Centrale"]
+            BTN2[/"🏁  Mission terminée"\]
+        end
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊"] --- N2["🔔●"] --- N3["📋"] --- N4["🛡️"]
+        end
+    end
+    APP --> CARD_RED --> CARD_ORA --> NAV
+    INFO1 --> INFO2 --> INFO3 --> PHOTO --> BTN1
+    INFO4 --> BTN2
+    style APP   fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style INFO1 fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style INFO2 fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style INFO3 fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style PHOTO fill:#1B2A3A,color:#7CA5BF,stroke:#0077B6,stroke-dasharray:4
+    style BTN1  fill:#0077B6,color:#fff,stroke:#03071E
+    style INFO4 fill:#1B2A3A,color:#EAF4FB,stroke:#FFB703
+    style BTN2  fill:#FFB703,color:#03071E,stroke:#FF8800
+    style CARD_RED fill:#0D1B2A,stroke:#EF233C
+    style CARD_ORA fill:#0D1B2A,stroke:#FFB703
+    style N2   fill:#0077B6,color:#fff,stroke:#03071E
+    style N1   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N3   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N4   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style NAV  fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 13 — Interface d'une alerte détaillée avec boutons d'action</p>
+</section>
+
+<!-- 14 — Historique -->
+<section id="ui-historique">
+  <div class="section-header">
+    <div class="section-number">14</div>
+    <h2>Interface de l'historique des victimes</h2>
+    <span class="badge">§ 4.4 — HistoriquePage</span>
+  </div>
+  <div class="description">
+    Liste complète des fiches victimes triées par date décroissante.
+    💚 Survie (vert) · 💔 Décès (rouge). Contenu : date, âge, lieu, description.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TB
+    subgraph PHONE["📱 HistoriquePage"]
+        direction TB
+        APP["AppBar  |  📋 Historique des victimes"]
+        subgraph H1["Fiche victime  —  12/05/2026"]
+            H1D["💚  Survie confirmée\n👤 Âge : 24 ans  ·  📍 Zone A — Secteur Nord\n📝 Noyade détectée par IA, intervention rapide."]
+        end
+        subgraph H2["Fiche victime  —  10/05/2026"]
+            H2D["💔  Décès\n👤 Âge : 67 ans  ·  📍 Zone C — Piscine Sud\n📝 Détection tardive, état critique à l'arrivée."]
+        end
+        subgraph H3["Fiche victime  —  08/05/2026"]
+            H3D["💚  Survie confirmée\n👤 Âge : 15 ans  ·  📍 Zone B — Plage Centrale"]
+        end
+        EMPTY{{"Si historique vide : 📭  Aucun historique"}}
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊"] --- N2["🔔"] --- N3["📋●"] --- N4["🛡️"]
+        end
+    end
+    APP --> H1 --> H2 --> H3
+    H3 -.->|"Liste vide"| EMPTY
+    H3 --> NAV
+    style APP  fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style H1D  fill:#1B2A3A,color:#06D6A0,stroke:#06D6A0
+    style H2D  fill:#1B2A3A,color:#EF233C,stroke:#EF233C
+    style H3D  fill:#1B2A3A,color:#06D6A0,stroke:#06D6A0
+    style H1   fill:#0D1B2A,stroke:#06D6A0
+    style H2   fill:#0D1B2A,stroke:#EF233C
+    style H3   fill:#0D1B2A,stroke:#06D6A0
+    style EMPTY fill:#0D1B2A,color:#7CA5BF,stroke:#7CA5BF
+    style N3   fill:#0077B6,color:#fff,stroke:#03071E
+    style N1   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N2   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N4   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style NAV  fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 14 — Interface de l'historique des victimes</p>
+</section>
+
+<!-- 15 — Panneau admin -->
+<section id="ui-admin">
+  <div class="section-header">
+    <div class="section-number">15</div>
+    <h2>Interface du panneau d'administration</h2>
+    <span class="badge">§ 4.5 — AdminPage</span>
+  </div>
+  <div class="description">
+    Accessible aux administrateurs uniquement. Bandeau de profil coloré selon le rôle.
+    Section « Membres gérés » + section « Admins secondaires » (visible adminPrincipal seulement).
+    Bouton « Ajouter un membre ».
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TB
+    subgraph PHONE["📱 AdminPage"]
+        direction TB
+        APP["AppBar  |  🛡️ Administration"]
+        subgraph BANNER["Profil administrateur"]
+            BN["🏆  Administrateur Principal  —  Karim Benali"]
+        end
+        subgraph MEM["👥 Membres gérés  (adminCin == currentUser.cin)"]
+            direction TB
+            M1["🏊  Ahmed Meziane  ·  Maître-Nageur  |  [✕ Révoquer]"]
+            M2["🏊  Sara Hamdi  ·  Maître-Nageur  |  [✕ Révoquer]"]
+        end
+        subgraph SEC["🛡️ Administrateurs secondaires  (adminPrincipal uniquement)"]
+            A1["🛡️  Youcef Dali  ·  Admin Secondaire  |  [✕ Révoquer]"]
+        end
+        ADD[/"👤+  Ajouter un membre"\]
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊"] --- N2["🔔"] --- N3["📋"] --- N4["🛡️●"]
+        end
+    end
+    APP --> BANNER --> MEM --> SEC --> ADD --> NAV
+    style APP  fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style BN   fill:#7B2D8B,color:#fff,stroke:#B455C8
+    style M1   fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style M2   fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style A1   fill:#1B2A3A,color:#EAF4FB,stroke:#00B4D8
+    style ADD  fill:#0D1B2A,color:#00B4D8,stroke:#00B4D8
+    style BANNER fill:#0D1B2A,stroke:#B455C8
+    style MEM  fill:#0D1B2A,stroke:#0077B6
+    style SEC  fill:#0D1B2A,stroke:#00B4D8
+    style N4   fill:#0077B6,color:#fff,stroke:#03071E
+    style N1   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N2   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N3   fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style NAV  fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 15 — Interface du panneau d'administration</p>
+</section>
+
+<!-- 16 — Formulaire ajout membre -->
+<section id="ui-ajout">
+  <div class="section-header">
+    <div class="section-number">16</div>
+    <h2>Formulaire d'ajout d'un nouveau membre</h2>
+    <span class="badge">§ 4.5 — _AddMemberDialog</span>
+  </div>
+  <div class="description">
+    Modale ouverte depuis le panneau admin. Champs : CIN, Nom, Prénom, Rôle (dropdown).
+    Validation : tous les champs obligatoires. <code>AppState.ajouterMembre()</code> écrit dans
+    <code>Firestore users/{cin}</code>.
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TB
+    subgraph PHONE["📱 AdminPage + _AddMemberDialog"]
+        direction TB
+        APP["AppBar  |  🛡️ Administration  (arrière-plan)"]
+        subgraph BG["Arrière-plan atténué"]
+            BGC["🏆 Administrateur Principal — Karim Benali\n[ Liste membres... ]"]
+        end
+        subgraph OVERLAY["Modale — Ajouter un membre"]
+            direction TB
+            subgraph FORM["Formulaire _AddMemberDialog"]
+                direction TB
+                F1["🪪  CIN\n▔▔▔▔▔▔▔▔▔▔▔"]
+                F2["👤  Nom\n▔▔▔▔▔▔▔▔▔▔▔"]
+                F3["👤  Prénom\n▔▔▔▔▔▔▔▔▔▔▔"]
+                F4["Rôle  ▾\n[ Maître-Nageur  /  Admin Secondaire ]"]
+                ERR{{"❌  Tous les champs sont obligatoires"}}
+            end
+            subgraph ACTIONS["Boutons"]
+                direction LR
+                CANCEL["[ Annuler ]"] --- SAVE[/"[ Ajouter ]"\]
+            end
+        end
+    end
+    APP --> BG --> OVERLAY
+    F1 --> F2 --> F3 --> F4 --> ERR --> ACTIONS
+    style APP    fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style BGC    fill:#0D1B2A,color:#7CA5BF,stroke:#0077B6,stroke-dasharray:4
+    style F1     fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style F2     fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style F3     fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style F4     fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style ERR    fill:#EF233C,color:#fff,stroke:#C1121F
+    style CANCEL fill:#0D1B2A,color:#7CA5BF,stroke:#7CA5BF
+    style SAVE   fill:#0077B6,color:#fff,stroke:#03071E
+    style FORM    fill:#0D1B2A,stroke:#0077B6
+    style ACTIONS fill:#0D1B2A,stroke:#0077B6
+    style OVERLAY fill:#1B2A3A,stroke:#00B4D8,stroke-width:2px
+    style BG      fill:#0D1B2A,stroke:#0077B6,stroke-dasharray:4
+    style PHONE   fill:#03071E,stroke:#00B4D8,stroke-width:2px
+    </div>
+  </div>
+  <p class="diagram-caption">Figure 16 — Formulaire d'ajout d'un nouveau membre</p>
+</section>
+
+<footer>
+  <strong>RescueWave</strong> · Projet de Fin d'Études ·
+  Tous les diagrammes sont générés depuis <code>lib/main.dart</code> via Mermaid.js ·
+  <a href="https://mermaid.js.org" style="color:var(--accent)">mermaid.js.org</a>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    flowchart: { useMaxWidth: true, htmlLabels: true },
+    sequence: { useMaxWidth: true },
+    classDiagram: { useMaxWidth: true },
+    fontSize: 14,
+  });
+</script>
+</body>
+</html>

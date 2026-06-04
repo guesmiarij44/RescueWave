@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maquettes UI — Application Mobile RescueWave</title>
+  <style>
+    :root {
+      --bg:          #03071E;
+      --surface:     #0D1B2A;
+      --surface2:    #1B2A3A;
+      --primary:     #0077B6;
+      --accent:      #00B4D8;
+      --text:        #EAF4FB;
+      --muted:       #7CA5BF;
+      --danger:      #EF233C;
+      --success:     #06D6A0;
+      --warning:     #FFB703;
+      --border:      rgba(0,119,182,0.3);
+    }
+
+    * { box-sizing: border-box; margin:0; padding:0; }
+
+    body {
+      background: #1a1a2e;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      padding: 40px 20px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      text-align: center;
+      color: var(--text);
+      margin-bottom: 60px;
+    }
+    .page-header h1 { font-size: 2rem; color: var(--accent); letter-spacing: 2px; }
+    .page-header p  { color: var(--muted); margin-top: 6px; font-size: .9rem; }
+
+    /* ── Grid of screens ── */
+    .screens-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 48px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ── Phone frame ── */
+    .figure-block { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .figure-label {
+      color: var(--muted);
+      font-size: .82rem;
+      font-style: italic;
+      text-align: center;
+      background: rgba(0,0,0,.4);
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .figure-label strong { color: var(--accent); font-style: normal; }
+
+    .phone-shell {
+      width: 320px;
+      background: #111;
+      border-radius: 44px;
+      padding: 14px;
+      box-shadow:
+        0 0 0 2px #333,
+        0 24px 60px rgba(0,0,0,.8),
+        inset 0 0 0 1px rgba(255,255,255,.06);
+      position: relative;
+    }
+    .phone-shell::before {           /* notch */
+      content: '';
+      position: absolute;
+      top: 16px; left: 50%;
+      transform: translateX(-50%);
+      width: 60px; height: 6px;
+      background: #333;
+      border-radius: 3px;
+      z-index: 10;
+    }
+    .phone-screen {
+      width: 100%;
+      background: var(--bg);
+      border-radius: 34px;
+      overflow: hidden;
+      min-height: 540px;
+      position: relative;
+    }
+
+    /* ════════════════ STATUS BAR ════════════════ */
+    .status-bar {
+      background: var(--surface);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 18px 6px;
+      font-size: .65rem;
+      color: var(--muted);
+    }
+
+    /* ════════════════ APP BAR ════════════════ */
+    .app-bar {
+      background: var(--surface);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(0,119,182,.2);
+    }
+    .app-bar .title { color: var(--text); font-weight: 700; font-size: .95rem; flex: 1; }
+    .app-bar .icon  { color: var(--muted); font-size: 1rem; }
+
+    /* ════════════════ BOTTOM NAV ════════════════ */
+    .bottom-nav {
+      background: var(--surface);
+      display: flex;
+      border-top: 1px solid rgba(0,119,182,.2);
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      border-radius: 0 0 34px 34px;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      font-size: .6rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .nav-item .nav-icon { font-size: 1.1rem; margin-bottom: 2px; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item.active .nav-underline {
+      width: 28px; height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin-top: 3px;
+    }
+
+    /* ════════════════ SCROLL AREA ════════════════ */
+    .scroll-area { padding: 14px 14px 80px; overflow: hidden; }
+
+    /* ════════════════ HELPERS ════════════════ */
+    .row   { display: flex; align-items: center; gap: 8px; }
+    .col   { display: flex; flex-direction: column; gap: 4px; }
+    .spacer{ flex: 1; }
+    .badge {
+      background: var(--danger);
+      color: #fff;
+      font-size: .55rem;
+      padding: 1px 5px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    /* cards */
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+    }
+    .card.danger-border  { border-color: rgba(239,35,60,.5); }
+    .card.warning-border { border-color: rgba(255,183,3,.5); }
+    .card.success-border { border-color: rgba(6,214,160,.5); }
+
+    /* stat card */
+    .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 10px; }
+    .stat-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 10px 8px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .stat-card .stat-icon { font-size: 1.2rem; }
+    .stat-card .stat-val  { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .stat-card .stat-lbl  { font-size: .6rem; color: var(--muted); margin-top: 2px; }
+
+    /* input field */
+    .input-field {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+    }
+    .input-field .f-icon  { font-size: .9rem; color: var(--muted); }
+    .input-field .f-label { font-size: .75rem; color: var(--muted); flex:1; }
+    .input-field .f-val   { font-size: .8rem;  color: var(--text); flex:1; }
+    .input-field .f-eye   { font-size: .8rem;  color: var(--muted); }
+
+    /* button */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 13px;
+      border: none;
+      font-size: .85rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      display: block;
+    }
+    .btn-primary  { background: var(--primary); color: #fff; }
+    .btn-danger   { background: var(--danger);  color: #fff; }
+    .btn-success  { background: var(--success); color: #03071E; }
+    .btn-warning  { background: var(--warning); color: #03071E; }
+    .btn-outline  {
+      background: transparent;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      padding: 11px;
+      border-radius: 12px;
+      font-size: .82rem;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    /* member tile */
+    .member-tile {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .member-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* section title */
+    .section-title {
+      font-size: .75rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: .5px;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+
+    /* chip */
+    .chip {
+      font-size: .6rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .chip-red     { background: rgba(239,35,60,.15);  color: var(--danger);  border: 1px solid rgba(239,35,60,.3);  }
+    .chip-orange  { background: rgba(255,183,3,.15);  color: var(--warning); border: 1px solid rgba(255,183,3,.3);  }
+    .chip-green   { background: rgba(6,214,160,.15);  color: var(--success); border: 1px solid rgba(6,214,160,.3);  }
+    .chip-blue    { background: rgba(0,180,216,.15);  color: var(--accent);  border: 1px solid rgba(0,180,216,.3);  }
+    .chip-purple  { background: rgba(180,80,200,.15); color: #B455C8;        border: 1px solid rgba(180,80,200,.3); }
+
+    /* text helpers */
+    .t-text   { color: var(--text);    font-size: .82rem; }
+    .t-muted  { color: var(--muted);   font-size: .72rem; }
+    .t-accent { color: var(--accent);  font-size: .75rem; }
+    .t-danger { color: var(--danger);  font-size: .75rem; }
+    .t-success{ color: var(--success); font-size: .75rem; }
+    .t-warn   { color: var(--warning); font-size: .75rem; }
+    .bold     { font-weight: 700; }
+
+    /* gps card */
+    .gps-card {
+      background: linear-gradient(135deg, #0a2342, var(--surface));
+      border-radius: 14px;
+      padding: 12px 14px;
+      border: 1px solid rgba(0,119,182,.4);
+      margin-bottom: 10px;
+    }
+    .gps-map {
+      background: #0d2137;
+      border-radius: 10px;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      font-size: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .gps-map::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 12px,
+        rgba(0,119,182,.08) 12px, rgba(0,119,182,.08) 13px),
+        repeating-linear-gradient(
+        90deg, transparent, transparent 12px,
+        rgba(0,119,182,.08) 12px, rgba(0,119,182,.08) 13px);
+    }
+    .gps-pin {
+      position: relative; z-index:1;
+      width: 20px; height: 20px;
+      background: var(--danger);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 0 10px rgba(239,35,60,.8);
+    }
+
+    /* boat status */
+    .boat-card {
+      background: linear-gradient(135deg, #0A2342, var(--surface));
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid rgba(0,119,182,.4);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .boat-pulse {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: rgba(6,214,160,.12);
+      border: 2px solid rgba(6,214,160,.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .signal-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      display: inline-block; margin-right: 4px;
+    }
+    .dot-green  { background: var(--success); }
+    .dot-yellow { background: var(--warning); }
+
+    /* hero login */
+    .login-hero {
+      background: linear-gradient(135deg, #020B18, var(--bg), #03184A);
+      min-height: 100%;
+      padding: 32px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .login-logo {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 0 30px rgba(0,180,216,.4);
+      margin-bottom: 14px;
+    }
+    .login-card {
+      background: rgba(13,27,42,.9);
+      border-radius: 20px;
+      padding: 22px 18px;
+      border: 1px solid rgba(0,119,182,.3);
+      width: 100%;
+      box-shadow: 0 16px 40px rgba(0,119,182,.15);
+      margin-top: 24px;
+    }
+    .login-footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: .68rem;
+    }
+
+    /* admin banner */
+    .admin-banner {
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .admin-banner.principal { background: linear-gradient(135deg, #7B2D8B, #B455C8); }
+    .admin-banner.secondary { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+
+    /* dialog overlay */
+    .dialog-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      border-radius: 34px;
+    }
+    .dialog-box {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 20px 16px 14px;
+      width: 86%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+    .dialog-title { color: var(--text); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
+    .dialog-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .dialog-actions .btn-cancel {
+      flex:1; padding: 10px; border-radius: 10px; background: transparent;
+      border: none; color: var(--muted); font-size: .8rem; cursor: pointer; text-align: center;
+    }
+    .dialog-actions .btn-add {
+      flex:2; padding: 10px; border-radius: 10px; background: var(--primary);
+      border: none; color: #fff; font-size: .8rem; font-weight: 700; cursor: pointer; text-align: center;
+    }
+
+    /* wave decoration */
+    .wave-bg {
+      position: absolute;
+      bottom: 0; left: 0; right: 0; height: 120px;
+      opacity: .4;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60'%3E%3Cpath d='M0 30 Q50 10 100 30 Q150 50 200 30 Q250 10 300 30 Q350 50 400 30 L400 60 L0 60Z' fill='%230077B6'/%3E%3C/svg%3E") no-repeat bottom/cover;
+    }
+
+    /* error box */
+    .error-box {
+      background: rgba(239,35,60,.1);
+      border: 1px solid rgba(239,35,60,.35);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 10px;
+      font-size: .72rem;
+      color: var(--danger);
+    }
+
+    /* dropdown */
+    .dropdown {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+    }
+    .dropdown .d-label { font-size: .65rem; color: var(--muted); margin-bottom: 2px; }
+    .dropdown .d-val   { font-size: .78rem; color: var(--text); }
+    .dropdown .d-arrow { color: var(--muted); font-size: .8rem; }
+
+    /* Flex-button row */
+    .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-row .btn { flex: 1; padding: 9px 6px; font-size: .75rem; }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>🚢 RescueWave — Maquettes UI</h1>
+  <p>Section 4 : Aperçu visuel de l'application mobile · Toutes les interfaces</p>
+</div>
+
+<div class="screens-grid">
+
+  <!-- ══════════════════════════════════════
+       FIGURE 1 — INTERFACE DE CONNEXION
+  ══════════════════════════════════════ -->
+  <div class="figure-block">
+    <div class="phone-shell">
+      <div class="phone-screen">
+        <!-- wave bg -->
+        <div class="wave-bg"></div>
+        <div class="login-hero">
+          <div class="login-logo">🚢</div>
+          <div style="color:var(--text);font-size:1.5rem;font-weight:900;letter-spacing:2px;">RescueWave</div>
+          <div style="color:var(--muted);font-size:.72rem;margin-top:4px;letter-spacing:.8px;">Système de surveillance aquatique</div>
+
+          <div class="login-card">
+            <div class="t-text bold" style="font-size:.92rem;">Connexion</div>
+            <div class="t-muted" style="margin-bottom:16px;margin-top:2px;">Entrez votre CIN et mot de passe</div>
+
+            <div class="input-field">
+              <span class="f-icon">🪪</span>
+              <span class="f-label">Numéro CIN</span>
+            </div>
+            <div class="input-field">
+              <span class="f-icon">🔒</span>
+              <span class="f-label">Mot de passe</span>
+              <span class="f-eye">👁</span>
+            </div>
+            <button class="btn btn-primary">Se connecter</button>
+          </div>
+
+          <div class="login-footer">
+            <span>🔒</span>
+            <span>Accès sécurisé – Personnel autorisé uniquement</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-label"><strong>Figure 10</strong> — Interface de connexion de RescueWave</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       FIGURE 2 — TABLEAU DE BORD
+  ══════════════════════════════════════ -->
+  <div class="figure-block">
+    <div class="phone-shell">
+      <div class="phone-screen">
+        <div class="status-bar">
+          <span>9:41</span><span>📶 🔋</span>
+        </div>
+        <!-- Sliver header -->
+        <div style="background:linear-gradient(180deg,#03184A,var(--surface));padding:14px 16px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">
+          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:1rem;">👤</div>
+          <div>
+            <div class="t-text bold">Bienvenue, Ahmed</div>
+            <div class="t-accent" style="font-size:.68rem;">Administrateur Principal</div>
+          </div>
+          <div class="spacer"></div>
+          <span style="color:var(--muted);font-size:.9rem;">⬆</span>
+        </div>
+
+        <div class="scroll-area">
+          <!-- Boat status -->
+          <div class="boat-card">
+            <div class="boat-pulse">🚢</div>
+            <div class="col">
+              <div class="t-text bold">Bateau Sauveteur</div>
+              <div class="row" style="gap:12px;margin-top:4px;">
+                <span class="t-muted"><span class="signal-dot dot-green"></span>Caméra IA</span>
+                <span class="t-muted"><span class="signal-dot dot-green"></span>GPS</span>
+              </div>
+              <div class="row" style="gap:12px;">
+                <span class="t-muted"><span class="signal-dot dot-yellow"></span>Batterie 72%</span>
+                <span class="t-muted"><span class="signal-dot dot-green"></span>WiFi</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="stat-row">
+            <div class="stat-card">
+              <div class="stat-icon">⚠️</div>
+              <div class="stat-val" style="color:var(--danger);">2</div>
+              <div class="stat-lbl">Alertes actives</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🤝</div>
+              <div class="stat-val">14</div>
+              <div class="stat-lbl">Interventions</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💚</div>
+              <div class="stat-val" style="color:var(--success);">12</div>
+              <div class="stat-lbl">Sauvés</div>
+            </div>
+          </div>
+
+          <!-- GPS -->
+          <div class="gps-card">
+            <div class="row">
+              <span style="font-size:.9rem;">📍</span>
+              <div class="t-text bold" style="font-size:.78rem;">Position GPS du bateau</div>
+              <div class="spacer"></div>
+              <span class="chip chip-green">En ligne</span>
+            </div>
+            <div class="gps-map">
+              <div class="gps-pin"></div>
+            </div>
+            <div class="t-muted" style="margin-top:6px;font-size:.65rem;">36.7325° N, 3.0875° E · Mise à jour : 09:41:22</div>
+          </div>
+
+          <!-- Last alert preview -->
+          <div class="section-title">🚨 Dernière alerte non traitée</div>
+          <div class="card danger-border">
+            <div class="row">
+              <span class="chip chip-red">🔴 Détectée</span>
+              <div class="spacer"></div>
+              <span class="t-muted" style="font-size:.65rem;">09:38</span>
+            </div>
+            <div class="t-text bold" style="margin-top:8px;">Zone A — Secteur Nord</div>
+            <div class="t-muted" style="font-size:.68rem;margin-top:2px;">Ref. #ALT-0042</div>
+          </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="bottom-nav">
+          <div class="nav-item active">
+            <div class="nav-icon">📊</div>
+            <div>Tableau</div>
+            <div class="nav-underline"></div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-icon">🔔<sup style="background:var(--danger);color:#fff;font-size:.5rem;padding:1px 3px;border-radius:6px;">2</sup></div>
+            <div>Alertes</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-icon">📋</div>
+            <div>Historique</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-icon">🛡️</div>
+            <div>Admin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-label"><strong>Figure 11</strong> — Interface du tableau de bord</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       FIGURE 3 — LISTE DES ALERTES
+  ══════════════════════════════════════ -->
+  <div class="figure-block">
+    <div class="phone-shell">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+        <div class="app-bar">
+          <span class="title">Alertes</span>
+          <span class="badge">2</span>
+        </div>
+
+        <div class="scroll-area">
+
+          <!-- Alerte 1 — rouge -->
+          <div class="card danger-border">
+            <div class="row">
+              <span class="chip chip-red">🔴 Détectée</span>
+              <div class="spacer"></div>
+              <span class="t-muted" style="font-size:.65rem;">09:38:14</span>
+            </div>
+            <div class="t-text bold" style="margin-top:8px;">Zone A — Secteur Nord</div>
+            <div class="t-muted" style="font-size:.68rem;margin-top:2px;">📍 36.7325° N, 3.0875° E</div>
+            <div class="t-muted" style="font-size:.65rem;margin-top:2px;">Réf. #ALT-0042</div>
+            <div class="btn-row">
+              <button class="btn btn-primary" style="font-size:.72rem;padding:8px;">✅ Confirmer</button>
+            </div>
+          </div>
+
+          <!-- Alerte 2 — orange -->
+          <div class="card warning-border">
+            <div class="row">
+              <span class="chip chip-orange">🟠 En cours</span>
+              <div class="spacer"></div>
+              <span class="t-muted" style="font-size:.65rem;">09:21:05</span>
+            </div>
+            <div class="t-text bold" style="margin-top:8px;">Zone B — Plage Centrale</div>
+            <div class="t-muted" style="font-size:.68rem;margin-top:2px;">📍 36.7291° N, 3.0861° E</div>
+            <div class="t-muted" style="font-size:.65rem;margin-top:2px;">Réf. #ALT-0041</div>
+            <div class="btn-row">
+              <button class="btn btn-warning" style="font-size:.72rem;padding:8px;color:#03071E;">🏁 Mission terminée</button>
+            </div>
+          </div>
+
+          <!-- Alerte 3 — verte -->
+          <div class="card success-border">
+            <div class="row">
+              <span class="chip chip-green">🟢 Accomplie</span>
+              <div class="spacer"></div>
+              <span class="t-muted" style="font-size:.65rem;">08:55:42</span>
+            </div>
+            <div class="t-text bold" style="margin-top:8px;">Zone C — Piscine Sud</div>
+            <div class="t-muted" style="font-size:.68rem;margin-top:2px;">📍 36.7255° N, 3.0849° E</div>
+            <div class="t-muted" style="font-size:.65rem;margin-top:2px;">Réf. #ALT-0040</div>
+          </div>
+
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="nav-icon">📊</div><div>Tableau</div></div>
+          <div class="nav-item active"><div class="nav-icon">🔔</div><div>Alertes</div><div class="nav-underline"></div></div>
+          <div class="nav-item"><div class="nav-icon">📋</div><div>Historique</div></div>
+          <div class="nav-item"><div class="nav-icon">🛡️</div><div>Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-label"><strong>Figure 12</strong> — Interface de la liste des alertes</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       FIGURE 4 — ALERTE DÉTAILLÉE
+  ══════════════════════════════════════ -->
+  <div class="figure-block">
+    <div class="phone-shell">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+        <div class="app-bar">
+          <span class="title">Alertes</span>
+        </div>
+
+        <div class="scroll-area">
+
+          <!-- Alerte détaillée — rouge non confirmée -->
+          <div class="card danger-border">
+            <div class="row">
+              <span class="chip chip-red">🔴 Détectée — Non confirmée</span>
+            </div>
+
+            <div style="background:rgba(239,35,60,.06);border-radius:10px;padding:12px;margin-top:10px;">
+              <div class="row" style="margin-bottom:6px;">
+                <span style="font-size:.8rem;">🕐</span>
+                <div>
+                  <div class="t-muted" style="font-size:.6rem;">Heure de détection</div>
+                  <div class="t-text bold" style="font-size:.8rem;">09:38:14 — Lundi 12 mai 2026</div>
+                </div>
+              </div>
+              <div class="row" style="margin-bottom:6px;">
+                <span style="font-size:.8rem;">📍</span>
+                <div>
+                  <div class="t-muted" style="font-size:.6rem;">Lieu de l'incident</div>
+                  <div class="t-text bold" style="font-size:.8rem;">Zone A — Secteur Nord</div>
+                  <div class="t-muted" style="font-size:.63rem;">36.7325° N, 3.0875° E</div>
+                </div>
+              </div>
+              <div class="row">
+                <span style="font-size:.8rem;">🆔</span>
+                <div>
+                  <div class="t-muted" style="font-size:.6rem;">Référence</div>
+                  <div class="t-text" style="font-size:.78rem;font-family:monospace;">#ALT-0042</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- photo placeholder -->
+            <div style="background:var(--surface2);border-radius:10px;height:72px;margin-top:10px;display:flex;align-items:center;justify-content:center;border:1px dashed rgba(0,119,182,.3);">
+              <span style="color:var(--muted);font-size:.72rem;">📷 Capture caméra IA disponible</span>
+            </div>
+
+            <!-- action buttons -->
+            <div class="btn-row">
+              <button class="btn btn-primary" style="font-size:.78rem;">✅ Confirmer la prise en charge</button>
+            </div>
+          </div>
+
+          <!-- Alerte — orange, confirmée, avec bouton terminée -->
+          <div class="card warning-border">
+            <div class="row">
+              <span class="chip chip-orange">🟠 Mission confirmée</span>
+            </div>
+            <div style="background:rgba(255,183,3,.06);border-radius:10px;padding:10px;margin-top:8px;">
+              <div class="row" style="margin-bottom:5px;">
+                <span style="font-size:.8rem;">🕐</span>
+                <div><div class="t-muted" style="font-size:.6rem;">Heure</div><div class="t-text bold" style="font-size:.78rem;">09:21:05</div></div>
+              </div>
+              <div class="row">
+                <span style="font-size:.8rem;">📍</span>
+                <div><div class="t-muted" style="font-size:.6rem;">Lieu</div><div class="t-text bold" style="font-size:.78rem;">Zone B — Plage Centrale</div></div>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-warning" style="font-size:.78rem;color:#03071E;">🏁 Mission terminée</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="nav-icon">📊</div><div>Tableau</div></div>
+          <div class="nav-item active"><div class="nav-icon">🔔</div><div>Alertes</div><div class="nav-underline"></div></div>
+          <div class="nav-item"><div class="nav-icon">📋</div><div>Historique</div></div>
+          <div class="nav-item"><div class="nav-icon">🛡️</div><div>Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-label"><strong>Figure 13</strong> — Interface d'une alerte détaillée avec boutons d'action</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       FIGURE 5 — HISTORIQUE DES VICTIMES
+  ══════════════════════════════════════ -->
+  <div class="figure-block">
+    <div class="phone-shell">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+        <div class="app-bar"><span class="title">Historique des victimes</span></div>
+
+        <div class="scroll-area">
+
+          <!-- Fiche 1 — Survie -->
+          <div class="card success-border">
+            <div class="row">
+              <span style="font-size:1rem;">💚</span>
+              <span class="t-success bold" style="font-size:.8rem;">Survie confirmée</span>
+              <div class="spacer"></div>
+              <span class="t-muted" style="font-size:.65rem;">12/05/2026</span>
+            </div>
+            <div style="height:1px;background:rgba(6,214,160,.2);margin:8px 0;"></div>
+            <div class="row" style="margin-bottom:5px;">
+              <span style="font-size:.8rem;">👤</span>
+              <div><span class="t-muted" style="font-size:.62rem;">Âge : </span><span class="t-text" style="font-size:.78rem;">24 ans</span></div>
+            </div>
+            <div class="row" style="margin-bottom:5px;">
+              <span style="font-size:.8rem;">📍</span>
+              <div><span class="t-muted" style="font-size:.62rem;">Lieu : </span><span class="t-text" style="font-size:.78rem;">Zone A — Secteur Nord</span></div>
+            </div>
+            <div class="row">
+              <span style="font-size:.8rem;">📝</span>
+              <div><span class="t-muted" style="font-size:.62rem;">Description : </span><span class="t-text" style="font-size:.75rem;">Noyade détectée par IA, intervention rapide du MN.</span></div>
+            </div>
+          </div>
+
+          <!-- Fiche 2 — Décès -->
+          <div class="card danger-border">
+            <div class="row">
+              <span style="font-size:1rem;">💔</span>
+              <span class="t-danger bold" style="font-size:.8rem;">Décès</span>
+              <div class="spacer"></div>
+              <span class="t-muted" style="font-size:.65rem;">10/05/2026</span>
+            </div>
+            <div style="height:1px;background:rgba(239,35,60,.2);margin:8px 0;"></div>
+            <div class="row" style="margin-bottom:5px;">
+              <span style="font-size:.8rem;">👤</span>
+              <div><span class="t-muted" style="font-size:.62rem;">Âge : </span><span class="t-text" style="font-size:.78rem;">67 ans</span></div>
+            </div>
+            <div class="row" style="margin-bottom:5px;">
+              <span style="font-size:.8rem;">📍</span>
+              <div><span class="t-muted" style="font-size:.62rem;">Lieu : </span><span class="t-text" style="font-size:.78rem;">Zone C — Piscine Sud</span></div>
+            </div>
+            <div class="row">
+              <span style="font-size:.8rem;">📝</span>
+              <div><span class="t-muted" style="font-size:.62rem;">Description : </span><span class="t-text" style="font-size:.75rem;">Détection tardive, état critique à l'arrivée du sauveteur.</span></div>
+            </div>
+          </div>
+
+          <!-- Fiche 3 — Survie -->
+          <div class="card success-border">
+            <div class="row">
+              <span style="font-size:1rem;">💚</span>
+              <span class="t-success bold" style="font-size:.8rem;">Survie confirmée</span>
+              <div class="spacer"></div>
+              <span class="t-muted" style="font-size:.65rem;">08/05/2026</span>
+            </div>
+            <div style="height:1px;background:rgba(6,214,160,.2);margin:8px 0;"></div>
+            <div class="row" style="margin-bottom:5px;">
+              <span style="font-size:.8rem;">👤</span>
+              <div><span class="t-muted" style="font-size:.62rem;">Âge : </span><span class="t-text" style="font-size:.78rem;">15 ans</span></div>
+            </div>
+            <div class="row">
+              <span style="font-size:.8rem;">📍</span>
+              <div><span class="t-muted" style="font-size:.62rem;">Lieu : </span><span class="t-text" style="font-size:.78rem;">Zone B — Plage Centrale</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="nav-icon">📊</div><div>Tableau</div></div>
+          <div class="nav-item"><div class="nav-icon">🔔</div><div>Alertes</div></div>
+          <div class="nav-item active"><div class="nav-icon">📋</div><div>Historique</div><div class="nav-underline"></div></div>
+          <div class="nav-item"><div class="nav-icon">🛡️</div><div>Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-label"><strong>Figure 14</strong> — Interface de l'historique des victimes</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       FIGURE 6 — PANNEAU D'ADMINISTRATION
+  ══════════════════════════════════════ -->
+  <div class="figure-block">
+    <div class="phone-shell">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+        <div class="app-bar"><span class="title">Administration</span></div>
+
+        <div class="scroll-area">
+
+          <!-- Admin banner -->
+          <div class="admin-banner principal">
+            <span style="font-size:1.6rem;">🏆</span>
+            <div>
+              <div style="color:#fff;font-weight:700;font-size:.88rem;">Administrateur Principal</div>
+              <div style="color:rgba(255,255,255,.75);font-size:.72rem;">Karim Benali</div>
+            </div>
+          </div>
+
+          <!-- Membres gérés -->
+          <div class="section-title">👥 Membres gérés</div>
+
+          <div class="member-tile">
+            <div class="member-avatar" style="background:rgba(6,214,160,.15);">🏊</div>
+            <div class="col" style="flex:1;">
+              <div class="t-text bold" style="font-size:.8rem;">Ahmed Meziane</div>
+              <div class="row" style="gap:6px;"><span class="chip chip-blue">Maître-Nageur</span></div>
+            </div>
+            <button style="background:rgba(239,35,60,.12);border:1px solid rgba(239,35,60,.3);border-radius:8px;color:var(--danger);font-size:.7rem;padding:5px 8px;cursor:pointer;">✕</button>
+          </div>
+          <div class="member-tile">
+            <div class="member-avatar" style="background:rgba(6,214,160,.15);">🏊</div>
+            <div class="col" style="flex:1;">
+              <div class="t-text bold" style="font-size:.8rem;">Sara Hamdi</div>
+              <div class="row" style="gap:6px;"><span class="chip chip-blue">Maître-Nageur</span></div>
+            </div>
+            <button style="background:rgba(239,35,60,.12);border:1px solid rgba(239,35,60,.3);border-radius:8px;color:var(--danger);font-size:.7rem;padding:5px 8px;cursor:pointer;">✕</button>
+          </div>
+
+          <!-- Admins secondaires (visible AP seulement) -->
+          <div class="section-title" style="margin-top:14px;">🛡️ Administrateurs secondaires</div>
+
+          <div class="member-tile">
+            <div class="member-avatar" style="background:rgba(0,180,216,.15);">🛡️</div>
+            <div class="col" style="flex:1;">
+              <div class="t-text bold" style="font-size:.8rem;">Youcef Dali</div>
+              <div class="row" style="gap:6px;"><span class="chip chip-purple">Admin Secondaire</span></div>
+            </div>
+            <button style="background:rgba(239,35,60,.12);border:1px solid rgba(239,35,60,.3);border-radius:8px;color:var(--danger);font-size:.7rem;padding:5px 8px;cursor:pointer;">✕</button>
+          </div>
+
+          <div style="margin-top:16px;">
+            <button class="btn-outline">👤+ &nbsp;Ajouter un membre</button>
+          </div>
+
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="nav-icon">📊</div><div>Tableau</div></div>
+          <div class="nav-item"><div class="nav-icon">🔔</div><div>Alertes</div></div>
+          <div class="nav-item"><div class="nav-icon">📋</div><div>Historique</div></div>
+          <div class="nav-item active"><div class="nav-icon">🛡️</div><div>Admin</div><div class="nav-underline"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-label"><strong>Figure 15</strong> — Interface du panneau d'administration</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       FIGURE 7 — FORMULAIRE AJOUT MEMBRE
+  ══════════════════════════════════════ -->
+  <div class="figure-block">
+    <div class="phone-shell">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+        <div class="app-bar"><span class="title">Administration</span></div>
+
+        <!-- Background (admin visible derrière la modale) -->
+        <div style="padding:14px 14px 0;opacity:.35;">
+          <div class="admin-banner principal" style="margin-bottom:12px;">
+            <span style="font-size:1.4rem;">🏆</span>
+            <div><div style="color:#fff;font-weight:700;font-size:.82rem;">Administrateur Principal</div></div>
+          </div>
+          <div class="section-title">👥 Membres gérés</div>
+          <div class="member-tile"><div class="member-avatar" style="background:rgba(6,214,160,.15);">🏊</div><div class="t-text" style="font-size:.78rem;">Ahmed Meziane</div></div>
+        </div>
+
+        <!-- Dialog overlay -->
+        <div class="dialog-overlay">
+          <div class="dialog-box">
+            <div class="dialog-title">👤 Ajouter un membre</div>
+
+            <div class="input-field" style="margin-bottom:8px;">
+              <span class="f-icon">🪪</span>
+              <span class="f-val">12345678</span>
+            </div>
+            <div class="input-field" style="margin-bottom:8px;">
+              <span class="f-icon">👤</span>
+              <span class="f-val">Bensalem</span>
+            </div>
+            <div class="input-field" style="margin-bottom:8px;">
+              <span class="f-icon">👤</span>
+              <span class="f-val">Omar</span>
+            </div>
+
+            <div class="dropdown">
+              <div>
+                <div class="d-label">Rôle</div>
+                <div class="d-val">Maître-Nageur</div>
+              </div>
+              <span class="d-arrow">▾</span>
+            </div>
+
+            <div class="dialog-actions">
+              <button class="dialog-actions btn-cancel">Annuler</button>
+              <button class="dialog-actions btn-add">Ajouter</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item"><div class="nav-icon">📊</div><div>Tableau</div></div>
+          <div class="nav-item"><div class="nav-icon">🔔</div><div>Alertes</div></div>
+          <div class="nav-item"><div class="nav-icon">📋</div><div>Historique</div></div>
+          <div class="nav-item active"><div class="nav-icon">🛡️</div><div>Admin</div><div class="nav-underline"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-label"><strong>Figure 16</strong> — Formulaire d'ajout d'un nouveau membre</div>
+  </div>
+
+</div><!-- /screens-grid -->
+
+<footer style="text-align:center;margin-top:60px;padding:24px;color:#7CA5BF;font-size:.82rem;border-top:1px solid rgba(0,119,182,.2);">
+  <strong style="color:#00B4D8;">RescueWave</strong> · Maquettes UI générées depuis <code>lib/main.dart</code> · Section 4 du chapitre Application Mobile
+</footer>
+
+</body>
+</html>

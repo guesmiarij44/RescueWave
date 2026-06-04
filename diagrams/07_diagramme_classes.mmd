@@ -1,0 +1,84 @@
+---
+title: Diagramme de classes — Application RescueWave
+---
+classDiagram
+    class UserRole {
+        <<enumeration>>
+        adminPrincipal
+        adminSecondaire
+        maitreDuNauge
+    }
+
+    class AppUser {
+        +String cin
+        +String nom
+        +String prenom
+        +UserRole role
+        +String? adminCin
+        +fromFirestore(doc) AppUser$
+        +toFirestore() Map
+    }
+
+    class AlerteNoyade {
+        +String id
+        +DateTime heure
+        +String lieu
+        +String? photoUrl
+        +bool confirmee
+        +bool traitee
+        +fromFirestore(doc) AlerteNoyade$
+    }
+
+    class HistoriqueVictime {
+        +String id
+        +DateTime date
+        +int age
+        +String lieu
+        +String description
+        +String maitreCin
+        +bool survivant
+        +fromFirestore(doc) HistoriqueVictime$
+    }
+
+    class AppState {
+        +AppUser? currentUser
+        +List~AppUser~ users
+        +List~AlerteNoyade~ alertes
+        +List~HistoriqueVictime~ historique
+        +bool isLoading
+        -FirebaseFirestore _db
+        -StreamSubscription _alertesSub
+        -StreamSubscription _historiqueSub
+        -String motDePasseGeneral$
+        -_init() Future
+        -_loadUsers() Future
+        -_listenToAlertes() void
+        -_listenToHistorique() void
+        +login(cin, mdp) bool
+        +logout() void
+        +confirmerAlerte(id) Future
+        +traiterAlerte(id) Future
+        +ajouterMembre(user) Future
+        +supprimerMembre(cin) Future
+        +dispose() void
+    }
+
+    class AppColors {
+        <<utility>>
+        +Color primary$
+        +Color accent$
+        +Color danger$
+        +Color success$
+        +Color warning$
+        +Color dark$
+        +Color surface$
+        +Color surfaceLight$
+        +Color text$
+        +Color textMuted$
+    }
+
+    AppUser --> UserRole : role
+    AppState "1" o-- "0..*" AppUser : users
+    AppState "1" o-- "0..*" AlerteNoyade : alertes
+    AppState "1" o-- "0..*" HistoriqueVictime : historique
+    AppState "1" o-- "0..1" AppUser : currentUser

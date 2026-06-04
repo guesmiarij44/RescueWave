@@ -1,0 +1,45 @@
+@startuml Séquence - Authentification utilisateur
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequence {
+  ParticipantBackgroundColor #E8F4FD
+  ParticipantBorderColor #0077B6
+  ArrowColor #0077B6
+  ActorBackgroundColor #D0EAF8
+  ActorBorderColor #0077B6
+  LifeLineBorderColor #0077B6
+}
+skinparam noteBackgroundColor #FFF9C4
+skinparam noteBorderColor #FFB703
+
+title Authentification — Application RescueWave
+
+actor "Utilisateur" as U
+participant "Écran\nConnexion" as Screen
+participant "AppState\n(ChangeNotifier)" as State
+database "Firestore\ncollection : users" as DB
+
+U -> Screen : Saisit son numéro CIN\net le mot de passe
+Screen -> State : login(cin, motDePasse)
+State -> State : Vérifie motDePasse == motDePasseGeneral
+
+alt Mot de passe incorrect
+  State --> Screen : Retourne false
+  Screen --> U : Affiche message d'erreur\n"CIN ou mot de passe incorrect"
+else Mot de passe valide
+  State -> State : Recherche dans users\noù u.cin == cin
+  note right : La liste users est\ndéjà chargée en mémoire\ndepuis le démarrage
+
+  alt CIN introuvable
+    State --> Screen : Retourne false
+    Screen --> U : Affiche message d'erreur\n"CIN ou mot de passe incorrect"
+  else CIN trouvé
+    State -> State : Affecte currentUser = AppUser trouvé
+    State -> State : notifyListeners()
+    State --> Screen : Retourne true
+    note over Screen,State : RescueBoatApp reconstruit\nson arbre de widgets
+    Screen --> U : Redirige vers HomeScreen\n(rôle : adminPrincipal / adminSecondaire\n/ maitreDuNauge)
+  end
+end
+
+@enduml

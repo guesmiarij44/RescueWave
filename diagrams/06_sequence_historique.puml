@@ -1,0 +1,38 @@
+@startuml Séquence - Consultation de l'historique des victimes
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequence {
+  ParticipantBackgroundColor #E8F4FD
+  ParticipantBorderColor #0077B6
+  ArrowColor #0077B6
+  ActorBackgroundColor #D0EAF8
+  ActorBorderColor #0077B6
+  LifeLineBorderColor #0077B6
+}
+skinparam noteBackgroundColor #FFF9C4
+skinparam noteBorderColor #FFB703
+
+title Consultation de l'historique des victimes — RescueWave
+
+actor "Utilisateur" as U
+participant "Navigation\nbas de page" as Nav
+participant "HistoriquePage" as Page
+participant "AppState\n(StreamSubscription)" as State
+database "Firestore\ncollection : historique" as DB
+
+note over State,DB : Abonnement temps réel actif\ndepuis le démarrage de l'app\n(_listenToHistorique)\nCollection triée par date DESC
+
+U -> Nav : Clique sur l'onglet\n"Historique"
+Nav -> Page : Affiche HistoriquePage
+Page -> State : Lit historique (déjà synchronisé)
+
+alt Liste vide
+  Page --> U : Affiche "Aucun historique"
+else Données disponibles
+  Page --> U : Affiche la liste des fiches\ntriées par date décroissante
+  note over U : Chaque fiche contient :\n• Statut (Survie / Décès)\n• Date de l'intervention\n• Âge de la victime\n• Lieu de l'incident\n• Description
+end
+
+note over DB,State : Toute nouvelle fiche\najoutée par un sauveteur\nmet à jour l'interface\nautomatiquement (temps réel)
+
+@enduml

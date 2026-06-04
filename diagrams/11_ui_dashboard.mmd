@@ -1,0 +1,53 @@
+---
+title: Interface du tableau de bord — DashboardPage (RescueWave)
+---
+flowchart TB
+    subgraph PHONE["📱 DashboardPage"]
+        direction TB
+
+        HDR["👤 Bienvenue, Ahmed  ·  Administrateur Principal\n                                                    ⬆ Déconnexion"]
+
+        subgraph BOAT["Carte statut bateau"]
+            BS["🚢  Bateau Sauveteur\n🟢 Caméra IA  🟢 GPS  🟡 Batterie 72%  🟢 WiFi"]
+        end
+
+        subgraph STATS["Statistiques"]
+            direction LR
+            S1["⚠️\n**2**\nAlertes actives"]
+            S2["🤝\n**14**\nInterventions"]
+            S3["💚\n**12**\nSauvés"]
+        end
+
+        subgraph GPS["Carte GPS — Position du bateau"]
+            GM["[ 🗺️  Carte interactive ]\n📍 36.7325° N, 3.0875° E\nMise à jour : 09:41:22"]
+        end
+
+        subgraph ALERT["🚨 Dernière alerte non traitée"]
+            LA["🔴 Zone A — Secteur Nord  |  09:38  |  Réf. #ALT-0042"]
+        end
+
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊\nTableau ●"] --- N2["🔔²\nAlertes"] --- N3["📋\nHistorique"] --- N4["🛡️\nAdmin"]
+        end
+    end
+
+    HDR --> BOAT --> STATS --> GPS --> ALERT --> NAV
+
+    style HDR   fill:#03184A,color:#EAF4FB,stroke:#0077B6
+    style BS    fill:#0A2342,color:#EAF4FB,stroke:#0077B6
+    style S1    fill:#1B2A3A,color:#EF233C,stroke:#EF233C
+    style S2    fill:#1B2A3A,color:#00B4D8,stroke:#00B4D8
+    style S3    fill:#1B2A3A,color:#06D6A0,stroke:#06D6A0
+    style GM    fill:#0d2137,color:#EAF4FB,stroke:#0077B6
+    style LA    fill:#1B2A3A,color:#EF233C,stroke:#EF233C
+    style N1    fill:#0077B6,color:#fff,stroke:#03071E
+    style N2    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N3    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N4    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style BOAT  fill:#0D1B2A,stroke:#0077B6
+    style STATS fill:#0D1B2A,stroke:#0077B6
+    style GPS   fill:#0D1B2A,stroke:#0077B6
+    style ALERT fill:#0D1B2A,stroke:#EF233C
+    style NAV   fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px

@@ -1,0 +1,47 @@
+---
+title: Diagramme de cas d'utilisation — RescueWave
+---
+flowchart LR
+    AP["👤 Administrateur\nPrincipal"]
+    AS["👤 Administrateur\nSecondaire"]
+    MN["👤 Maître-Nageur\n(Sauveteur)"]
+    RPi["🤖 Raspberry Pi\n(Bateau IA)"]
+
+    subgraph SYS["Système RescueWave"]
+        subgraph ACC["Accès commun"]
+            UC1(["S'authentifier\nCIN + mot de passe"])
+            UC2(["Consulter le\ntableau de bord"])
+            UC3(["Recevoir les alertes\nen temps réel"])
+            UC4(["Confirmer\nune alerte"])
+            UC5(["Clôturer\nune alerte"])
+            UC6(["Consulter\nl'historique des victimes"])
+            UC7(["Se déconnecter"])
+        end
+        subgraph ADM["Administration"]
+            UC8(["Ajouter\nun membre"])
+            UC9(["Révoquer l'accès\nd'un membre"])
+            UC10(["Gérer les admins\nsecondaires"])
+        end
+        subgraph IA["Sous-système IA"]
+            UC11(["Analyser le flux\nvidéo en continu"])
+            UC12(["Générer une alerte\nautomatique Firestore"])
+            UC13(["Transmettre la\nposition GPS"])
+        end
+    end
+
+    AP --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7
+    AP --> UC8 & UC9 & UC10
+    AS --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7
+    AS --> UC8 & UC9
+    MN --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7
+    RPi --> UC11 & UC13
+    UC11 -->|"<<include>>"| UC12
+
+    style AP fill:#0077B6,color:#fff,stroke:#03071E
+    style AS fill:#00B4D8,color:#fff,stroke:#03071E
+    style MN fill:#06D6A0,color:#03071E,stroke:#03071E
+    style RPi fill:#FFB703,color:#03071E,stroke:#03071E
+    style SYS fill:#f0f8ff,stroke:#0077B6
+    style ACC fill:#e8f4fd,stroke:#0077B6
+    style ADM fill:#fff3e0,stroke:#FFB703
+    style IA fill:#e8f8f5,stroke:#06D6A0

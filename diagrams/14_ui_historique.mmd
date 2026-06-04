@@ -1,0 +1,47 @@
+---
+title: Interface de l'historique des victimes — HistoriquePage (RescueWave)
+---
+flowchart TB
+    subgraph PHONE["📱 HistoriquePage"]
+        direction TB
+
+        APP["AppBar  |  📋 Historique des victimes"]
+
+        subgraph H1["Fiche victime  —  12/05/2026"]
+            H1D["💚  Survie confirmée\n👤 Âge : 24 ans\n📍 Lieu : Zone A — Secteur Nord\n📝 Noyade détectée par IA, intervention rapide du MN."]
+        end
+
+        subgraph H2["Fiche victime  —  10/05/2026"]
+            H2D["💔  Décès\n👤 Âge : 67 ans\n📍 Lieu : Zone C — Piscine Sud\n📝 Détection tardive, état critique à l'arrivée."]
+        end
+
+        subgraph H3["Fiche victime  —  08/05/2026"]
+            H3D["💚  Survie confirmée\n👤 Âge : 15 ans\n📍 Lieu : Zone B — Plage Centrale\n📝 Prise en charge immédiate."]
+        end
+
+        EMPTY{{"Si historique vide :\n📭  Aucun historique"}}
+
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊\nTableau"] --- N2["🔔\nAlertes"] --- N3["📋 ●\nHistorique"] --- N4["🛡️\nAdmin"]
+        end
+    end
+
+    APP --> H1 --> H2 --> H3
+    H3 -.->|"Liste vide"| EMPTY
+    H3 --> NAV
+
+    style APP   fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style H1D   fill:#1B2A3A,color:#06D6A0,stroke:#06D6A0
+    style H2D   fill:#1B2A3A,color:#EF233C,stroke:#EF233C
+    style H3D   fill:#1B2A3A,color:#06D6A0,stroke:#06D6A0
+    style H1    fill:#0D1B2A,stroke:#06D6A0
+    style H2    fill:#0D1B2A,stroke:#EF233C
+    style H3    fill:#0D1B2A,stroke:#06D6A0
+    style EMPTY fill:#0D1B2A,color:#7CA5BF,stroke:#7CA5BF
+    style N3    fill:#0077B6,color:#fff,stroke:#03071E
+    style N1    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N2    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N4    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style NAV   fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px

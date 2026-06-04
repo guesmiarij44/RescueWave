@@ -1,0 +1,38 @@
+---
+title: Schéma du fonctionnement complet du système RescueWave
+---
+flowchart TD
+    A1["🚢 Étape 1\nBateau autonome patrouille\ndans la zone surveillée"]
+    A2["📷 Étape 2\nCaméra embarquée capture\nle flux vidéo en continu"]
+    A3["🤖 Étape 3\nModèle IA analyse\nchaque image du flux"]
+
+    DEC{{"🔍 Noyade\ndétectée ?"}}
+
+    A4["📡 Étape 4\nRaspberry Pi génère une alerte\ndans Firestore\n{ heure, lieu, confirmee: false }"]
+    A5["🔔 Étape 5\nApplication mobile reçoit\nl'alerte en temps réel\n(StreamSnapshot)"]
+    A6["📱 Étape 6\nAlerte affichée sur l'interface\ndu personnel de surveillance\n(carte rouge 🔴)"]
+    A7["✅ Étape 7\nSauveteur clique 'Confirmer'\nStatut → 'Mission confirmée' 🟠"]
+    A8["🏊 Étape 8\nSauveteur intervient\nsur le terrain"]
+    A9["🏁 Étape 9\nSauveteur clique 'Mission terminée'\nStatut → 'Mission accomplie' 🟢"]
+    A10["📋 Étape 10\nFiche victime enregistrée\ndans l'historique Firestore"]
+
+    CONT["🔄 Surveillance continue\n(retour à l'analyse)"]
+
+    A1 --> A2 --> A3 --> DEC
+    DEC -->|"✅ Oui"| A4
+    DEC -->|"❌ Non"| CONT
+    CONT --> A1
+    A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10
+
+    style A1 fill:#0D1B2A,color:#fff,stroke:#0077B6
+    style A2 fill:#0D1B2A,color:#fff,stroke:#0077B6
+    style A3 fill:#0D1B2A,color:#fff,stroke:#0077B6
+    style DEC fill:#FFB703,color:#03071E,stroke:#FF8800
+    style A4 fill:#1B2A3A,color:#fff,stroke:#00B4D8
+    style A5 fill:#1B2A3A,color:#fff,stroke:#00B4D8
+    style A6 fill:#EF233C,color:#fff,stroke:#C1121F
+    style A7 fill:#FFB703,color:#03071E,stroke:#FF8800
+    style A8 fill:#0077B6,color:#fff,stroke:#03071E
+    style A9 fill:#06D6A0,color:#03071E,stroke:#04A87D
+    style A10 fill:#06D6A0,color:#03071E,stroke:#04A87D
+    style CONT fill:#1B2A3A,color:#fff,stroke:#7CA5BF

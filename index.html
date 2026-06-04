@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>SauvetageBot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+/* ============================================================
+   TOKENS & RESET
+   ============================================================ */
+:root {
+  --bg0:      #060c14;
+  --bg1:      #0b1520;
+  --bg2:      #0f1e30;
+  --bg3:      #162540;
+  --border:   #1c3050;
+  --accent:   #00b4ff;
+  --accent2:  #0077cc;
+  --warn:     #ff9500;
+  --danger:   #ff3030;
+  --success:  #00e676;
+  --text:     #d0dff0;
+  --text2:    #6888a0;
+  --font-mono:'Share Tech Mono', monospace;
+  --font-cond:'Barlow Condensed', sans-serif;
+  --font-body:'Barlow', sans-serif;
+  --r:        10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);font-family:var(--font-body)}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input{font-family:inherit;outline:none}
+
+/* ============================================================
+   LAYOUT — PAGE TABS
+   ============================================================ */
+.app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+/* TOP STATUS BAR */
+.topbar {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 14px;
+  background:var(--bg1);
+  border-bottom:1px solid var(--border);
+  min-height:48px;
+  flex-shrink:0;
+}
+.topbar-logo {
+  font-family:var(--font-cond); font-size:18px; font-weight:900;
+  letter-spacing:2px; color:var(--accent); white-space:nowrap;
+}
+.topbar-logo span{ color:var(--text2); font-weight:400; }
+.topbar-sep{ flex:1; }
+.conn-badge {
+  display:flex; align-items:center; gap:5px;
+  font-size:11px; font-family:var(--font-cond); letter-spacing:1px;
+  padding:4px 10px; border-radius:20px;
+  background:var(--bg3); color:var(--text2);
+  border:1px solid var(--border);
+  transition:all .3s;
+}
+.conn-badge.connected{ color:var(--success); border-color:var(--success); }
+.conn-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--danger);transition:background .3s;
+}
+.conn-badge.connected .conn-dot{
+  background:var(--success);
+  animation:pulse 1.8s infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,.4)}50%{box-shadow:0 0 0 5px rgba(0,230,118,0)}}
+
+/* ALERT RIBBON */
+.alert-ribbon{
+  display:none; align-items:center; gap:10px;
+  padding:11px 16px;
+  background:var(--danger);
+  font-family:var(--font-cond); font-size:15px; font-weight:700; letter-spacing:.5px;
+  animation:ribbonIn .3s ease;
+  flex-shrink:0;
+}
+.alert-ribbon.show{ display:flex; }
+@keyframes ribbonIn{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+.ribbon-icon{font-size:20px;}
+.ribbon-text{flex:1;}
+.ribbon-close{
+  background:rgba(255,255,255,.2); border:none; color:#fff;
+  width:28px;height:28px;border-radius:50%;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+}
+
+/* TAB BAR */
+.tabbar{
+  display:flex; border-top:1px solid var(--border);
+  background:var(--bg1); flex-shrink:0;
+  order:99;
+}
+.tabbar-btn{
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  gap:3px; padding:8px 4px;
+  background:none; color:var(--text2);
+  font-family:var(--font-cond); font-size:10px; letter-spacing:.5px;
+  transition:color .2s;
+  border-top:2px solid transparent;
+}
+.tabbar-btn.active{ color:var(--accent); border-top-color:var(--accent); }
+.tabbar-icon{ font-size:20px; }
+
+/* PAGES */
+.pages{ flex:1; overflow:hidden; position:relative; }
+.page{ position:absolute;inset:0;overflow-y:auto;display:none; }
+.page.active{ display:block; }
+.page-scroll{ padding:14px; display:flex; flex-direction:column; gap:14px; padding-bottom:20px; }
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+.card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+}
+.card-header{
+  display:flex; align-items:center; gap:8px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  font-family:var(--font-cond); font-size:12px; font-weight:700;
+  letter-spacing:1.5px; color:var(--text2); text-transform:uppercase;
+}
+.card-header .icon{ font-size:14px; }
+.card-body{ padding:14px; }
+
+/* STATUS BANNER */
+.status-banner{
+  display:flex; align-items:center; gap:12px;
+  padding:14px 16px;
+  border-radius:var(--r);
+  border:1px solid var(--border);
+  background:var(--bg3);
+  transition:all .3s;
+}
+.status-banner.alert  { border-color:var(--danger); background:rgba(255,48,48,.1); }
+.status-banner.active { border-color:var(--success); background:rgba(0,230,118,.07); }
+.status-banner.warn   { border-color:var(--warn); background:rgba(255,149,0,.07); }
+.sb-icon{ font-size:28px; }
+.sb-body{ flex:1; }
+.sb-title{ font-family:var(--font-cond); font-size:17px; font-weight:700; letter-spacing:.5px; }
+.sb-sub{ font-size:12px; color:var(--text2); margin-top:3px; }
+.sb-conf{
+  font-family:var(--font-cond); font-size:22px; font-weight:900;
+  color:var(--danger);
+}
+
+/* METRICS GRID */
+.metrics{
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:1px; background:var(--border);
+  border-radius:var(--r); overflow:hidden;
+}
+.metric{
+  background:var(--bg2); padding:10px 8px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.metric-lbl{ font-size:9px; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; }
+.metric-val{
+  font-family:var(--font-cond); font-size:18px; font-weight:700;
+  color:var(--accent); font-variant-numeric:tabular-nums;
+}
+.metric-unit{ font-size:9px; color:var(--text2); }
+.metric-val.warn{ color:var(--warn); }
+.metric-val.danger{ color:var(--danger); }
+.metric-val.ok{ color:var(--success); }
+
+/* MAP */
+#map{
+  height:220px; border-radius:var(--r);
+  overflow:hidden; border:1px solid var(--border);
+  position:relative; z-index:1;
+}
+.leaflet-container{ background:#0a151f; }
+.map-fullscreen{ height:100%!important; border-radius:0!important; }
+
+/* Custom markers */
+.boat-marker-icon{
+  width:32px;height:32px;
+  background:var(--accent);
+  border:2px solid #fff;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  box-shadow:0 0 14px rgba(0,180,255,.7);
+}
+.victim-marker-icon{
+  width:28px;height:28px;
+  background:var(--danger);
+  border:2px solid #fff;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+  box-shadow:0 0 14px rgba(255,48,48,.7);
+  animation:blinkDot 1s infinite;
+}
+@keyframes blinkDot{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* MISSION BUTTONS */
+.mission-btns{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.btn{
+  padding:14px 10px; border-radius:var(--r);
+  font-family:var(--font-cond); font-size:15px; font-weight:700; letter-spacing:.5px;
+  transition:all .15s; display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn:active:not(:disabled){ transform:scale(.96); }
+.btn:disabled{ opacity:.35; cursor:not-allowed; }
+.btn-confirm{
+  background:rgba(0,230,118,.12); color:var(--success);
+  border:1px solid var(--success);
+}
+.btn-confirm:hover:not(:disabled){ background:rgba(0,230,118,.2); }
+.btn-cancel{
+  background:rgba(255,48,48,.12); color:var(--danger);
+  border:1px solid var(--danger);
+}
+.btn-cancel:hover:not(:disabled){ background:rgba(255,48,48,.2); }
+.btn-home{
+  grid-column:span 2;
+  background:rgba(0,180,255,.1); color:var(--accent);
+  border:1px solid var(--accent);
+}
+.btn-home:hover:not(:disabled){ background:rgba(0,180,255,.2); }
+.btn-estop{
+  grid-column:span 2;
+  background:rgba(255,48,48,.2); color:var(--danger);
+  border:2px solid var(--danger);
+  font-size:16px;
+}
+.btn-estop:hover{ background:rgba(255,48,48,.35); }
+
+/* SOLAR / BATTERY */
+.battery-bar-wrap{ margin-top:6px; }
+.battery-bar-track{
+  height:8px; border-radius:4px; background:var(--bg0);
+  overflow:hidden; border:1px solid var(--border);
+}
+.battery-bar-fill{
+  height:100%; border-radius:4px; background:var(--success);
+  transition:width .6s, background .4s;
+}
+.solar-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:6px 0; border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.solar-row:last-child{ border-bottom:none; }
+.solar-row .lbl{ color:var(--text2); }
+.solar-row .val{ font-family:var(--font-cond); font-weight:700; color:var(--accent); }
+.charge-pill{
+  display:inline-block; padding:2px 8px; border-radius:20px;
+  font-size:11px; font-family:var(--font-cond); font-weight:700; letter-spacing:.5px;
+  background:rgba(0,180,255,.15); color:var(--accent); border:1px solid var(--accent2);
+}
+
+/* LOG */
+.log-scroll{ max-height:160px; overflow-y:auto; }
+.log-scroll::-webkit-scrollbar{ width:3px; }
+.log-scroll::-webkit-scrollbar-thumb{ background:var(--border); border-radius:2px; }
+.log-entry{
+  display:flex; gap:8px; padding:4px 0;
+  border-bottom:1px solid var(--border);
+  font-family:var(--font-mono); font-size:11px; color:var(--text2);
+  line-height:1.3;
+}
+.log-entry:last-child{ border-bottom:none; }
+.log-time{ color:var(--bg3); min-width:56px; }
+.log-entry.info .log-msg{ color:var(--text2); }
+.log-entry.ok   .log-msg{ color:var(--success); }
+.log-entry.warn .log-msg{ color:var(--warn); }
+.log-entry.err  .log-msg{ color:var(--danger); }
+
+/* GPS INFO */
+.gps-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:5px 0; border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.gps-row:last-child{ border-bottom:none; }
+.gps-lbl{ color:var(--text2); }
+.gps-val{ font-family:var(--font-mono); color:var(--accent); font-size:12px; }
+
+/* COMPASS */
+.compass-wrap{
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:16px;
+}
+.compass{
+  width:140px; height:140px;
+  border-radius:50%;
+  background:radial-gradient(circle, var(--bg3) 0%, var(--bg0) 100%);
+  border:2px solid var(--border);
+  position:relative;
+  box-shadow:0 0 20px rgba(0,180,255,.15);
+}
+.compass-ring{
+  position:absolute; inset:6px; border-radius:50%;
+  border:1px solid rgba(0,180,255,.2);
+}
+.compass-needle{
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-100%) rotate(0deg);
+  transform-origin:50% 100%;
+  width:0; height:0;
+  border-left:5px solid transparent;
+  border-right:5px solid transparent;
+  border-bottom:56px solid var(--danger);
+  filter:drop-shadow(0 0 4px var(--danger));
+  transition:transform .5s ease;
+}
+.compass-needle::after{
+  content:'';
+  position:absolute; top:56px; left:-5px;
+  width:0; height:0;
+  border-left:5px solid transparent;
+  border-right:5px solid transparent;
+  border-top:28px solid var(--text2);
+}
+.compass-n{
+  position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  font-family:var(--font-cond); font-size:13px; font-weight:700; color:var(--danger);
+}
+.compass-s{
+  position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+  font-family:var(--font-cond); font-size:12px; color:var(--text2);
+}
+.compass-e{
+  position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  font-family:var(--font-cond); font-size:12px; color:var(--text2);
+}
+.compass-w{
+  position:absolute; left:8px; top:50%; transform:translateY(-50%);
+  font-family:var(--font-cond); font-size:12px; color:var(--text2);
+}
+.compass-center{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:10px; height:10px; border-radius:50%;
+  background:var(--accent); box-shadow:0 0 6px var(--accent);
+}
+.heading-val{
+  font-family:var(--font-cond); font-size:32px; font-weight:900;
+  color:var(--accent); letter-spacing:2px;
+}
+.heading-dir{
+  font-family:var(--font-cond); font-size:16px; color:var(--text2); letter-spacing:1px;
+}
+
+/* JOYSTICK */
+.joystick-section{
+  display:flex; flex-direction:column; align-items:center;
+  gap:14px; padding:16px;
+}
+.joystick-hint{
+  font-size:12px; color:var(--text2); text-align:center; letter-spacing:.3px;
+}
+.joystick-container{
+  position:relative; width:180px; height:180px;
+  border-radius:50%;
+  background:radial-gradient(circle at 50% 50%, var(--bg3) 0%, var(--bg0) 100%);
+  border:2px solid var(--border);
+  touch-action:none; user-select:none;
+  box-shadow:0 0 20px rgba(0,180,255,.1);
+}
+.joystick-zone{
+  position:absolute; inset:20px; border-radius:50%;
+  border:1px dashed rgba(0,180,255,.2);
+}
+.joystick-knob{
+  position:absolute; width:56px; height:56px;
+  border-radius:50%;
+  background:radial-gradient(circle, var(--accent) 0%, var(--accent2) 100%);
+  border:2px solid rgba(255,255,255,.3);
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  box-shadow:0 0 16px rgba(0,180,255,.5);
+  transition:box-shadow .1s;
+  cursor:grab;
+}
+.joystick-knob:active{ cursor:grabbing; box-shadow:0 0 24px rgba(0,180,255,.8); }
+.joy-readout{
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;
+}
+.joy-val-box{
+  background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+  padding:8px 10px; text-align:center;
+}
+.joy-lbl{ font-size:10px; color:var(--text2); letter-spacing:.5px; font-family:var(--font-cond); }
+.joy-val{ font-family:var(--font-cond); font-size:22px; font-weight:700; color:var(--accent); }
+.manual-toggle{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; border-radius:8px;
+  background:var(--bg3); border:1px solid var(--border);
+  width:100%;
+}
+.toggle-label{ flex:1; font-family:var(--font-cond); font-size:14px; letter-spacing:.5px; }
+.toggle-sw{
+  width:42px; height:24px; border-radius:12px; background:var(--bg0);
+  border:1px solid var(--border); position:relative; cursor:pointer; transition:background .2s;
+}
+.toggle-sw.on{ background:var(--accent2); border-color:var(--accent); }
+.toggle-sw::after{
+  content:'';
+  position:absolute; width:18px; height:18px; border-radius:50%;
+  background:#fff; top:2px; left:2px; transition:transform .2s;
+}
+.toggle-sw.on::after{ transform:translateX(18px); }
+
+/* VIDEO */
+.video-wrap{
+  position:relative; background:#000;
+  border-radius:var(--r); overflow:hidden;
+  aspect-ratio:16/9; border:1px solid var(--border);
+}
+#video-canvas{ width:100%; height:100%; display:none; object-fit:cover; }
+.video-placeholder{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; color:var(--text2);
+}
+.video-badge-bar{
+  position:absolute; top:0; left:0; right:0;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:7px 10px;
+  background:linear-gradient(to bottom, rgba(0,0,0,.7), transparent);
+  pointer-events:none;
+}
+.live-badge{
+  padding:3px 8px; border-radius:4px;
+  font-family:var(--font-cond); font-size:11px; font-weight:700; letter-spacing:1px;
+  background:var(--danger); color:#fff;
+}
+.live-badge.offline{ background:var(--bg3); color:var(--text2); }
+.snap-btn{
+  position:absolute; bottom:10px; right:10px;
+  background:rgba(0,0,0,.6); border:1px solid var(--border);
+  color:var(--text); border-radius:8px; padding:6px 12px;
+  font-family:var(--font-cond); font-size:13px; font-weight:700; letter-spacing:.5px;
+  cursor:pointer;
+}
+
+/* ============================================================
+   MODAL (Victim Alert)
+   ============================================================ */
+.modal-bg{
+  position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:900;
+  display:none; align-items:center; justify-content:center; padding:16px;
+}
+.modal-bg.show{ display:flex; }
+.modal{
+  width:100%; max-width:380px;
+  background:var(--bg2); border-radius:16px;
+  border:1px solid var(--danger); overflow:hidden;
+  animation:modalIn .25s ease;
+}
+@keyframes modalIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-top{
+  background:var(--danger); padding:16px 18px;
+  display:flex; align-items:center; gap:10px;
+}
+.modal-top h2{ font-family:var(--font-cond); font-size:20px; font-weight:900; letter-spacing:.5px; }
+.modal-top p{ font-size:13px; opacity:.85; margin-top:3px; }
+.modal-img-wrap{
+  background:#000; aspect-ratio:16/9;
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+}
+.modal-img-wrap img{ width:100%; height:100%; object-fit:cover; display:none; }
+.modal-img-ph{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  color:var(--text2); font-size:13px;
+}
+.modal-info-grid{
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:10px; padding:14px;
+}
+.info-box{
+  background:var(--bg3); border-radius:8px; padding:10px;
+  border:1px solid var(--border);
+}
+.info-box .ilbl{ font-size:10px; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; }
+.info-box .ival{
+  font-family:var(--font-cond); font-size:18px; font-weight:700;
+  color:var(--accent); margin-top:4px;
+}
+.info-box .ival.red{ color:var(--danger); }
+.modal-actions{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 14px 14px;
+}
+.modal-dismiss{
+  grid-column:span 2; text-align:center;
+  font-size:12px; color:var(--text2); padding:8px; cursor:pointer;
+  font-family:var(--font-cond); letter-spacing:.5px;
+}
+.modal-dismiss:hover{ color:var(--text); }
+
+/* ============================================================
+   WS CONFIG PANEL
+   ============================================================ */
+.ws-panel{ padding:14px; display:flex; flex-direction:column; gap:10px; }
+.ws-input-row{ display:flex; gap:8px; }
+.ws-input{
+  flex:1; background:var(--bg3); border:1px solid var(--border);
+  border-radius:8px; padding:10px 12px; color:var(--text); font-size:14px;
+  font-family:var(--font-mono);
+}
+.btn-connect{
+  padding:10px 14px; border-radius:8px;
+  background:rgba(0,180,255,.15); border:1px solid var(--accent);
+  color:var(--accent); font-family:var(--font-cond); font-size:14px; font-weight:700;
+  letter-spacing:.5px;
+}
+.btn-connect:hover{ background:rgba(0,180,255,.25); }
+.hint{ font-size:12px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── TOP BAR ─────────────────────────────────────── -->
+  <div class="topbar">
+    <div class="topbar-logo">🚤 SAUVETAGE<span>BOT</span></div>
+    <div class="topbar-sep"></div>
+    <div class="conn-badge" id="conn-badge">
+      <div class="conn-dot" id="conn-dot"></div>
+      <span id="conn-text">HORS LIGNE</span>
+    </div>
+  </div>
+
+  <!-- ── ALERT RIBBON ────────────────────────────────── -->
+  <div class="alert-ribbon" id="alert-ribbon">
+    <span class="ribbon-icon">🚨</span>
+    <span class="ribbon-text" id="ribbon-text">VICTIME DÉTECTÉE!</span>
+    <button class="ribbon-close" onclick="hideRibbon()">✕</button>
+  </div>
+
+  <!-- ── PAGES ───────────────────────────────────────── -->
+  <div class="pages">
+
+    <!-- ════════════════════════════════════════════════
+         PAGE 1: MISSION
+    ════════════════════════════════════════════════ -->
+    <div class="page active" id="page-mission">
+      <div class="page-scroll">
+
+        <!-- Status Banner -->
+        <div class="status-banner" id="status-banner">
+          <div class="sb-icon" id="sb-icon">⚓</div>
+          <div class="sb-body">
+            <div class="sb-title" id="sb-title">EN ATTENTE</div>
+            <div class="sb-sub" id="sb-sub">Aucune mission active</div>
+          </div>
+          <div id="sb-conf"></div>
+        </div>
+
+        <!-- Quick Metrics -->
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-lbl">Vitesse</div>
+            <div class="metric-val" id="m-speed">—</div>
+            <div class="metric-unit">km/h</div>
+          </div>
+          <div class="metric">
+            <div class="metric-lbl">Cap</div>
+            <div class="metric-val" id="m-hdg">—</div>
+            <div class="metric-unit">deg</div>
+          </div>
+          <div class="metric">
+            <div class="metric-lbl">Batterie</div>
+            <div class="metric-val" id="m-batt">—</div>
+            <div class="metric-unit">V</div>
+          </div>
+          <div class="metric">
+            <div class="metric-lbl">Solaire</div>
+            <div class="metric-val" id="m-solar">—</div>
+            <div class="metric-unit">W</div>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div id="map"></div>
+
+        <!-- Mission Actions -->
+        <div class="card">
+          <div class="card-header"><span class="icon">🎯</span> CONTRÔLE MISSION</div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+            <div class="mission-btns">
+              <button class="btn btn-confirm" id="btn-confirm" onclick="confirmMission()" disabled>
+                ✅ CONFIRMER
+              </button>
+              <button class="btn btn-cancel" id="btn-cancel" onclick="cancelMission()" disabled>
+                ✖ ANNULER
+              </button>
+              <button class="btn btn-home" id="btn-home" onclick="returnHome()">
+                🏠 RETOUR BASE
+              </button>
+              <button class="btn btn-estop" onclick="emergencyStop()">
+                ⛔ ARRÊT D'URGENCE
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Log -->
+        <div class="card">
+          <div class="card-header"><span class="icon">📋</span> JOURNAL</div>
+          <div class="card-body" style="padding:10px 14px;">
+            <div class="log-scroll" id="log-panel"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         PAGE 2: NAVIGATION
+    ════════════════════════════════════════════════ -->
+    <div class="page" id="page-nav">
+      <div class="page-scroll">
+
+        <!-- Compass -->
+        <div class="card">
+          <div class="card-header"><span class="icon">🧭</span> CAP &amp; ORIENTATION</div>
+          <div class="compass-wrap">
+            <div class="compass">
+              <div class="compass-ring"></div>
+              <div class="compass-n">N</div>
+              <div class="compass-s">S</div>
+              <div class="compass-e">E</div>
+              <div class="compass-w">O</div>
+              <div class="compass-needle" id="compass-needle"></div>
+              <div class="compass-center"></div>
+            </div>
+            <div class="heading-val" id="heading-val">000°</div>
+            <div class="heading-dir" id="heading-dir">NORD</div>
+          </div>
+        </div>
+
+        <!-- GPS Info -->
+        <div class="card">
+          <div class="card-header"><span class="icon">📍</span> POSITION GPS</div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:0;">
+            <div class="gps-row">
+              <span class="gps-lbl">Latitude</span>
+              <span class="gps-val" id="gps-lat">—</span>
+            </div>
+            <div class="gps-row">
+              <span class="gps-lbl">Longitude</span>
+              <span class="gps-val" id="gps-lon">—</span>
+            </div>
+            <div class="gps-row">
+              <span class="gps-lbl">Altitude</span>
+              <span class="gps-val" id="gps-alt">— m</span>
+            </div>
+            <div class="gps-row">
+              <span class="gps-lbl">Vitesse GPS</span>
+              <span class="gps-val" id="gps-spd">— km/h</span>
+            </div>
+            <div class="gps-row">
+              <span class="gps-lbl">Fix GPS</span>
+              <span class="gps-val" id="gps-fix">—</span>
+            </div>
+            <div class="gps-row">
+              <span class="gps-lbl">IMU Roulis</span>
+              <span class="gps-val" id="imu-roll">—°</span>
+            </div>
+            <div class="gps-row">
+              <span class="gps-lbl">IMU Tangage</span>
+              <span class="gps-val" id="imu-pitch">—°</span>
+            </div>
+            <div class="gps-row">
+              <span class="gps-lbl">Cible Mission</span>
+              <span class="gps-val" id="mission-tgt">—</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         PAGE 3: CONTRÔLE MANUEL
+    ════════════════════════════════════════════════ -->
+    <div class="page" id="page-ctrl">
+      <div class="page-scroll">
+
+        <!-- Manual toggle -->
+        <div class="card">
+          <div class="card-body" style="padding:12px 14px;">
+            <div class="manual-toggle" id="manual-toggle-row" onclick="toggleManual()">
+              <span class="toggle-label">🕹️ MODE MANUEL</span>
+              <div class="toggle-sw" id="manual-sw"></div>
+            </div>
+            <div style="margin-top:8px;font-size:12px;color:var(--text2);">
+              En mode manuel, le joystick envoie des commandes directes au bateau.
+              Désactive la navigation autonome.
+            </div>
+          </div>
+        </div>
+
+        <!-- Joystick -->
+        <div class="card">
+          <div class="card-header"><span class="icon">🕹️</span> JOYSTICK DIRECTIONNEL</div>
+          <div class="joystick-section">
+            <div class="joystick-hint">Glissez pour diriger · Relâchez pour arrêter</div>
+            <div class="joystick-container" id="joystick">
+              <div class="joystick-zone"></div>
+              <div class="joystick-knob" id="joy-knob"></div>
+            </div>
+            <div class="joy-readout">
+              <div class="joy-val-box">
+                <div class="joy-lbl">VITESSE</div>
+                <div class="joy-val" id="joy-speed">0.0</div>
+              </div>
+              <div class="joy-val-box">
+                <div class="joy-lbl">GOUVERNAIL</div>
+                <div class="joy-val" id="joy-rudder">0.0</div>
+              </div>
+            </div>
+            <button class="btn btn-estop" style="grid-column:unset;width:100%;" onclick="emergencyStop()">
+              ⛔ ARRÊT D'URGENCE
+            </button>
+          </div>
+        </div>
+
+        <!-- Camera Snapshot -->
+        <div class="card">
+          <div class="card-header"><span class="icon">📷</span> FLUX CAMÉRA</div>
+          <div class="card-body" style="padding:0;">
+            <div class="video-wrap">
+              <canvas id="video-canvas"></canvas>
+              <div class="video-placeholder" id="video-ph">
+                <div style="font-size:36px;">📷</div>
+                <div style="font-size:13px;">En attente du flux vidéo…</div>
+              </div>
+              <div class="video-badge-bar">
+                <span class="live-badge offline" id="live-badge">HORS LIGNE</span>
+                <span style="font-size:11px;color:var(--text2);font-family:var(--font-mono);" id="frame-counter">0 fr</span>
+              </div>
+              <button class="snap-btn" onclick="requestSnapshot()">📸 SNAPSHOT</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         PAGE 4: ÉNERGIE
+    ════════════════════════════════════════════════ -->
+    <div class="page" id="page-energy">
+      <div class="page-scroll">
+
+        <!-- Battery -->
+        <div class="card">
+          <div class="card-header"><span class="icon">🔋</span> BATTERIE</div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <span style="font-family:var(--font-cond);font-size:36px;font-weight:900;color:var(--accent);" id="batt-voltage-big">—V</span>
+              <span style="font-family:var(--font-cond);font-size:20px;font-weight:700;" id="batt-pct">—%</span>
+            </div>
+            <div class="battery-bar-wrap">
+              <div class="battery-bar-track">
+                <div class="battery-bar-fill" id="batt-fill" style="width:0%"></div>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--text2);">
+              LiFePO4 12V 20Ah · Seuil faible: 10.8V · Seuil critique: 10.0V
+            </div>
+          </div>
+        </div>
+
+        <!-- Solar -->
+        <div class="card">
+          <div class="card-header"><span class="icon">☀️</span> SYSTÈME SOLAIRE MPPT</div>
+          <div class="card-body" style="display:flex;flex-direction:column;">
+            <div class="solar-row">
+              <span class="lbl">Tension panneau</span>
+              <span class="val" id="s-vpanel">— V</span>
+            </div>
+            <div class="solar-row">
+              <span class="lbl">Puissance panneau</span>
+              <span class="val" id="s-ppower">— W</span>
+            </div>
+            <div class="solar-row">
+              <span class="lbl">Courant batterie</span>
+              <span class="val" id="s-ibatt">— A</span>
+            </div>
+            <div class="solar-row">
+              <span class="lbl">Énergie aujourd'hui</span>
+              <span class="val" id="s-daily">— Wh</span>
+            </div>
+            <div class="solar-row">
+              <span class="lbl">État charge MPPT</span>
+              <span class="val"><span class="charge-pill" id="s-state">—</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Consommation -->
+        <div class="card">
+          <div class="card-header"><span class="icon">⚡</span> CONSOMMATION ESTIMÉE</div>
+          <div class="card-body">
+            <div class="solar-row">
+              <span class="lbl">Raspberry Pi 4</span>
+              <span class="val">5–8 W</span>
+            </div>
+            <div class="solar-row">
+              <span class="lbl">Moteur (croisière)</span>
+              <span class="val">60–100 W</span>
+            </div>
+            <div class="solar-row">
+              <span class="lbl">Caméra + IA</span>
+              <span class="val">2 W</span>
+            </div>
+            <div class="solar-row">
+              <span class="lbl">GPS + IMU + LEDs</span>
+              <span class="val">5.5 W</span>
+            </div>
+            <div class="solar-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:8px;">
+              <span class="lbl">Panneaux solaires 2×50W</span>
+              <span class="val">60–100 W</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         PAGE 5: PARAMÈTRES
+    ════════════════════════════════════════════════ -->
+    <div class="page" id="page-settings">
+      <div class="page-scroll">
+
+        <div class="card">
+          <div class="card-header"><span class="icon">🌐</span> CONNEXION WEBSOCKET</div>
+          <div class="ws-panel">
+            <div class="ws-input-row">
+              <input class="ws-input" id="ws-input" type="text" value="ws://192.168.1.100:8765"
+                placeholder="ws://IP_RASPBERRY:8765">
+              <button class="btn-connect" onclick="reconnect()">CONN.</button>
+            </div>
+            <div class="hint">
+              Entrez l'adresse IP du Raspberry Pi sur le même réseau WiFi.<br>
+              Pour trouver l'IP: <code style="font-size:11px;">hostname -I</code> sur le Pi.
+            </div>
+            <button class="btn btn-home" style="width:100%;" onclick="activateDemo()">
+              🔬 MODE DÉMO (sans bateau)
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="icon">🏠</span> BASE DE RETOUR</div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:8px;">
+            <div class="gps-row">
+              <span class="gps-lbl">Lat. base</span>
+              <span class="gps-val" id="home-lat">Non définie</span>
+            </div>
+            <div class="gps-row">
+              <span class="gps-lbl">Lon. base</span>
+              <span class="gps-val" id="home-lon">Non définie</span>
+            </div>
+            <button class="btn btn-home" style="width:100%;" onclick="setHomeHere()">
+              📍 DÉFINIR ICI COMME BASE
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="icon">ℹ️</span> À PROPOS</div>
+          <div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.6;">
+            <strong style="color:var(--text);">SauvetageBot v1.0</strong><br>
+            Application mobile de supervision pour bateau autonome de sauvetage.<br><br>
+            Raspberry Pi 4 · YOLOv8 · GPS NEO-M8N · IMU MPU-6050<br>
+            MPPT Victron · ESC BLHeli-32 · WebSocket 8765
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+
+  <!-- ── TAB BAR ────────────────────────────────────── -->
+  <div class="tabbar">
+    <button class="tabbar-btn active" onclick="switchTab('mission',this)">
+      <span class="tabbar-icon">🎯</span>MISSION
+    </button>
+    <button class="tabbar-btn" onclick="switchTab('nav',this)">
+      <span class="tabbar-icon">🧭</span>NAV
+    </button>
+    <button class="tabbar-btn" onclick="switchTab('ctrl',this)">
+      <span class="tabbar-icon">🕹️</span>CTRL
+    </button>
+    <button class="tabbar-btn" onclick="switchTab('energy',this)">
+      <span class="tabbar-icon">☀️</span>ÉNERGIE
+    </button>
+    <button class="tabbar-btn" onclick="switchTab('settings',this)">
+      <span class="tabbar-icon">⚙️</span>CONFIG
+    </button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── MODAL: VICTIM ALERT ─────────────────────────────── -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-top">
+      <div style="font-size:28px;">🚨</div>
+      <div>
+        <h2>VICTIME DÉTECTÉE</h2>
+        <p>Confirmez pour lancer la mission de sauvetage</p>
+      </div>
+    </div>
+    <div class="modal-img-wrap">
+      <img id="modal-img" alt="Détection IA">
+      <div class="modal-img-ph" id="modal-img-ph">
+        <div style="font-size:32px;">📷</div>
+        <div>Image de détection non disponible</div>
+      </div>
+    </div>
+    <div class="modal-info-grid">
+      <div class="info-box">
+        <div class="ilbl">Confiance IA</div>
+        <div class="ival red" id="modal-conf">—</div>
+      </div>
+      <div class="info-box">
+        <div class="ilbl">Position GPS</div>
+        <div class="ival" id="modal-pos" style="font-size:12px;">—</div>
+      </div>
+      <div class="info-box">
+        <div class="ilbl">Horodatage</div>
+        <div class="ival" id="modal-time" style="font-size:13px;">—</div>
+      </div>
+      <div class="info-box">
+        <div class="ilbl">Batterie</div>
+        <div class="ival" id="modal-batt">—V</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-confirm" style="padding:16px;" onclick="confirmMission()">
+        ✅ CONFIRMER
+      </button>
+      <button class="btn btn-cancel" style="padding:16px;" onclick="cancelMission()">
+        ✖ ANNULER
+      </button>
+    </div>
+    <div class="modal-dismiss" onclick="dismissModal()">Ignorer cette alerte</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+let WS_URL = localStorage.getItem('ws_url') || 'ws://192.168.1.100:8765';
+document.getElementById('ws-input').value = WS_URL;
+
+// ============================================================
+// STATE
+// ============================================================
+let ws = null;
+let connected = false;
+let victimPending = false;
+let manualMode = false;
+let frameCount = 0;
+let homePos = null;
+let lastVictimPos = null;   // Position GPS de la victime détectée
+let demoActive = false;
+let demoInterval = null;
+let joyActive = false;
+let joyCenter = { x:0, y:0 };
+let joyRadius = 62;         // (180-56)/2
+let currentBattery = 12.6;
+
+// ============================================================
+// LEAFLET MAP
+// ============================================================
+const map = L.map('map', { zoomControl:false, attributionControl:false }).setView([36.82, 10.18], 14);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution:'', maxZoom:19
+}).addTo(map);
+
+const boatIcon = L.divIcon({
+  className:'',
+  html:'<div class="boat-marker-icon">🚤</div>',
+  iconSize:[32,32], iconAnchor:[16,16]
+});
+const victimIcon = L.divIcon({
+  className:'',
+  html:'<div class="victim-marker-icon">🆘</div>',
+  iconSize:[28,28], iconAnchor:[14,14]
+});
+
+let boatMarker   = L.marker([36.82,10.18], {icon:boatIcon}).addTo(map);
+let victimMarker = null;
+let boatTrack    = L.polyline([], {color:'#00b4ff', weight:2, opacity:.5}).addTo(map);
+let boatTrackPts = [];
+
+function updateBoatPosition(lat, lon) {
+  boatMarker.setLatLng([lat,lon]);
+  boatTrackPts.push([lat,lon]);
+  if(boatTrackPts.length > 200) boatTrackPts.shift();
+  boatTrack.setLatLngs(boatTrackPts);
+}
+
+function showVictimOnMap(lat, lon) {
+  if(victimMarker) map.removeLayer(victimMarker);
+  victimMarker = L.marker([lat,lon], {icon:victimIcon}).addTo(map);
+  victimMarker.bindPopup('<b>🆘 VICTIME</b>').openPopup();
+  map.fitBounds([[lat,lon], boatMarker.getLatLng()], {padding:[30,30]});
+}
+
+// ============================================================
+// WEBSOCKET
+// ============================================================
+function connect() {
+  if(ws) { try{ ws.close(); }catch(e){} }
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    connected = true;
+    setConnected(true);
+    log('Connecté au bateau: ' + WS_URL, 'ok');
+    if(demoInterval){ clearInterval(demoInterval); demoActive=false; }
+    // Heartbeat
+    setInterval(() => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'heartbeat'})); }, 5000);
+  };
+
+  ws.onclose = () => {
+    connected = false;
+    setConnected(false);
+    log('Connexion perdue. Reconnexion dans 5s…', 'warn');
+    setTimeout(connect, 5000);
+  };
+
+  ws.onerror = () => {
+    log('Erreur WebSocket.', 'err');
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      handleMessage(msg);
+    } catch(ex) { console.error(ex); }
+  };
+}
+
+function reconnect() {
+  WS_URL = document.getElementById('ws-input').value.trim();
+  localStorage.setItem('ws_url', WS_URL);
+  log('Tentative de connexion: ' + WS_URL, 'info');
+  connect();
+}
+
+function send(data) {
+  if(ws && ws.readyState===WebSocket.OPEN) {
+    ws.send(JSON.stringify(data));
+  } else {
+    log('Non connecté — commande non envoyée', 'err');
+  }
+}
+
+// ============================================================
+// MESSAGE HANDLER
+// ============================================================
+function handleMessage(msg) {
+  if(msg.type === 'telemetry')       handleTelemetry(msg.data);
+  else if(msg.type === 'alert')      handleAlert(msg.data);
+  else if(msg.type === 'status')     handleStatus(msg.status, msg.data);
+  else if(msg.type === 'connected')  log('Bateau: ' + msg.message, 'ok');
+}
+
+function handleTelemetry(d) {
+  // Position
+  if(d.position) {
+    const p = d.position;
+    updateBoatPosition(p.lat, p.lon);
+    document.getElementById('gps-lat').textContent = (p.lat||0).toFixed(6) + '°';
+    document.getElementById('gps-lon').textContent = (p.lon||0).toFixed(6) + '°';
+    document.getElementById('gps-alt').textContent = (p.alt||0).toFixed(1) + ' m';
+    document.getElementById('gps-spd').textContent = (p.speed_kmh||0).toFixed(1) + ' km/h';
+    document.getElementById('gps-fix').textContent = p.fixed ? '✅ Fix' : '❌ No fix';
+    document.getElementById('m-speed').textContent = (p.speed_kmh||0).toFixed(1);
+    if(p.heading!==undefined) updateCompass(p.heading);
+    if(p.roll!==undefined) document.getElementById('imu-roll').textContent = p.roll.toFixed(1)+'°';
+    if(p.pitch!==undefined) document.getElementById('imu-pitch').textContent = p.pitch.toFixed(1)+'°';
+  }
+  // Solar / Battery
+  if(d.solar) {
+    const s = d.solar;
+    currentBattery = s.battery_voltage || currentBattery;
+    const bv = currentBattery;
+    const pct = Math.max(0, Math.min(100, ((bv-10.0)/(13.6-10.0))*100)).toFixed(0);
+    const bvEl = document.getElementById('m-batt');
+    bvEl.textContent = bv.toFixed(1);
+    bvEl.className = 'metric-val ' + (bv<10.8?'danger':bv<11.5?'warn':'ok');
+    document.getElementById('batt-voltage-big').textContent = bv.toFixed(2)+'V';
+    document.getElementById('batt-pct').textContent = pct+'%';
+    const fill = document.getElementById('batt-fill');
+    fill.style.width = pct+'%';
+    fill.style.background = bv<10.8?'var(--danger)':bv<11.5?'var(--warn)':'var(--success)';
+    document.getElementById('s-vpanel').textContent = (s.panel_voltage||0).toFixed(1)+' V';
+    document.getElementById('s-ppower').textContent = (s.panel_power||0).toFixed(0)+' W';
+    document.getElementById('s-ibatt').textContent = (s.battery_current||0).toFixed(2)+' A';
+    document.getElementById('s-daily').textContent = (s.daily_energy_wh||0).toFixed(0)+' Wh';
+    document.getElementById('s-state').textContent = s.charge_state || '—';
+    document.getElementById('m-solar').textContent = (s.panel_power||0).toFixed(0);
+    document.getElementById('modal-batt').textContent = bv.toFixed(1)+'V';
+  }
+  // Motors
+  if(d.motors) {
+    // speed already shown via GPS
+  }
+  // Mission target
+  if(d.mission_target) {
+    const t = d.mission_target;
+    document.getElementById('mission-tgt').textContent = t.lat.toFixed(5)+', '+t.lon.toFixed(5);
+  }
+  // Home position from boat
+  if(d.home_position && !homePos) {
+    homePos = d.home_position;
+    document.getElementById('home-lat').textContent = homePos.lat.toFixed(6)+'°';
+    document.getElementById('home-lon').textContent = homePos.lon.toFixed(6)+'°';
+  }
+  // Mission status
+  if(d.mission_active) {
+    setStatus('active','🟢','MISSION ACTIVE','Navigation vers la victime…');
+  } else if(d.victim_detected && !victimPending) {
+    setStatus('alert','🔴','VICTIME DÉTECTÉE','Confirmation requise');
+  } else if(!d.mission_active && !d.victim_detected) {
+    setStatus('idle','⚓','EN ATTENTE','Aucune mission active');
+  }
+}
+
+function handleAlert(d) {
+  if(d.type === 'victim_detected') {
+    victimPending = true;
+    lastVictimPos = d.position;   // ← Stocker position GPS victime
+    showRibbon('🚨 VICTIME DÉTECTÉE — Confiance: '+(d.confidence*100).toFixed(0)+'%');
+    showVictimModal(d);
+    if(d.position) showVictimOnMap(d.position.lat, d.position.lon);
+    document.getElementById('btn-confirm').disabled = false;
+    document.getElementById('btn-cancel').disabled = false;
+    setStatus('alert','🔴','VICTIME DÉTECTÉE!','Confirmation requise');
+    log('🚨 ALERTE: Victime détectée — confiance '+(d.confidence*100).toFixed(0)+'%', 'err');
+    // Vibration mobile
+    if(navigator.vibrate) navigator.vibrate([400,100,400,100,400]);
+
+  } else if(d.type === 'low_battery') {
+    showRibbon('⚡ Batterie faible: '+d.voltage?.toFixed(1)+'V');
+    log('Batterie faible: '+d.voltage?.toFixed(1)+'V', 'warn');
+    if(navigator.vibrate) navigator.vibrate(600);
+  }
+}
+
+function handleStatus(status, data) {
+  const msgs = {
+    'arrived_at_victim': ['DESTINATION ATTEINTE','Arrivé à la victime 🎉','active','ok'],
+    'returning':         ['RETOUR BASE','Navigation vers la base…','idle','info'],
+    'mission_started':   ['MISSION ACTIVE','En route vers la victime…','active','ok'],
+    'mission_cancelled': ['EN ATTENTE','Mission annulée','idle','warn'],
+    'snapshot':          [null,null,null,'info'],
+  };
+  const m = msgs[status];
+  if(!m) return;
+  if(m[0]) setStatus(m[2]||'idle','⚓',m[0],m[1]);
+  if(m[3]) log('Statut: '+status, m[3]);
+  if(status==='snapshot' && data?.frame_base64) updateVideoFrame(data.frame_base64);
+}
+
+// ============================================================
+// COMPASS
+// ============================================================
+function updateCompass(heading) {
+  heading = ((heading % 360) + 360) % 360;
+  document.getElementById('compass-needle').style.transform =
+    `translate(-50%, -100%) rotate(${heading}deg)`;
+  document.getElementById('heading-val').textContent = heading.toFixed(0).padStart(3,'0')+'°';
+  document.getElementById('m-hdg').textContent = heading.toFixed(0);
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+  document.getElementById('heading-dir').textContent = dirs[Math.round(heading/22.5)%16];
+}
+
+// ============================================================
+// VIDEO
+// ============================================================
+function updateVideoFrame(b64) {
+  const canvas = document.getElementById('video-canvas');
+  const ph = document.getElementById('video-ph');
+  const badge = document.getElementById('live-badge');
+  canvas.style.display = 'block';
+  ph.style.display = 'none';
+  badge.textContent = 'EN DIRECT';
+  badge.className = 'live-badge';
+  const img = new Image();
+  img.onload = () => {
+    canvas.width = img.width; canvas.height = img.height;
+    canvas.getContext('2d').drawImage(img,0,0);
+  };
+  img.src = 'data:image/jpeg;base64,'+b64;
+  frameCount++;
+  document.getElementById('frame-counter').textContent = frameCount+' fr';
+}
+
+function requestSnapshot() {
+  send({type:'get_snapshot'});
+  log('Snapshot demandé…','info');
+}
+
+// ============================================================
+// MISSION ACTIONS
+// ============================================================
+function confirmMission() {
+  // Envoie aussi la position GPS de la victime pour la navigation
+  send({ type:'confirm_rescue', target_position: lastVictimPos });
+  closeModal(); hideRibbon();
+  victimPending = false;
+  document.getElementById('btn-cancel').disabled = false;
+  document.getElementById('btn-confirm').disabled = true;
+  setStatus('active','🟢','MISSION ACTIVE','En route vers la victime…');
+  log('Mission de sauvetage confirmée. Bateau en route.','ok');
+}
+
+function cancelMission() {
+  send({type:'cancel_mission'});
+  closeModal(); hideRibbon();
+  victimPending = false;
+  lastVictimPos = null;
+  if(victimMarker){ map.removeLayer(victimMarker); victimMarker=null; }
+  document.getElementById('btn-confirm').disabled = true;
+  document.getElementById('btn-cancel').disabled = true;
+  setStatus('idle','⚓','EN ATTENTE','Mission annulée');
+  log('Mission annulée.','warn');
+}
+
+function returnHome() {
+  const hp = homePos || {lat:36.8200, lon:10.1800};
+  send({type:'return_home', home_position: hp});
+  setStatus('idle','🏠','RETOUR BASE','Navigation vers la base…');
+  log('Retour à la base: '+hp.lat.toFixed(5)+', '+hp.lon.toFixed(5),'info');
+}
+
+function emergencyStop() {
+  send({type:'emergency_stop'});
+  setStatus('alert','⛔','ARRÊT D\'URGENCE','Moteurs stoppés');
+  log('⛔ ARRÊT D\'URGENCE envoyé!','err');
+  if(navigator.vibrate) navigator.vibrate([800,200,800]);
+}
+
+function setHomeHere() {
+  // Use last known GPS position
+  const latEl = document.getElementById('gps-lat').textContent;
+  const lonEl = document.getElementById('gps-lon').textContent;
+  const lat = parseFloat(latEl);
+  const lon = parseFloat(lonEl);
+  if(!isNaN(lat) && !isNaN(lon)) {
+    homePos = {lat,lon};
+    document.getElementById('home-lat').textContent = lat.toFixed(6)+'°';
+    document.getElementById('home-lon').textContent = lon.toFixed(6)+'°';
+    log('Base définie: '+lat.toFixed(5)+', '+lon.toFixed(5),'ok');
+  } else {
+    log('Position GPS non disponible','warn');
+  }
+}
+
+// ============================================================
+// JOYSTICK
+// ============================================================
+function toggleManual() {
+  manualMode = !manualMode;
+  const sw = document.getElementById('manual-sw');
+  sw.className = 'toggle-sw' + (manualMode?' on':'');
+  log('Mode manuel: '+(manualMode?'ACTIVÉ':'DÉSACTIVÉ'), manualMode?'warn':'ok');
+  if(!manualMode) send({type:'manual_control', speed:0, rudder:0});
+}
+
+(function setupJoystick() {
+  const jc = document.getElementById('joystick');
+  const knob = document.getElementById('joy-knob');
+
+  function getJoyCenter() {
+    const r = jc.getBoundingClientRect();
+    return { x: r.left + r.width/2, y: r.top + r.height/2 };
+  }
+
+  function moveKnob(cx, cy, px, py) {
+    let dx = px - cx, dy = py - cy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if(dist > joyRadius) { dx = dx/dist*joyRadius; dy = dy/dist*joyRadius; }
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    const speed  = Math.max(0, -dy/joyRadius);   // Up = forward
+    const rudder = dx/joyRadius;
+    document.getElementById('joy-speed').textContent  = speed.toFixed(2);
+    document.getElementById('joy-rudder').textContent = rudder.toFixed(2);
+    if(manualMode) send({type:'manual_control', speed:+speed.toFixed(2), rudder:+rudder.toFixed(2)});
+  }
+
+  function resetKnob() {
+    knob.style.transform = 'translate(-50%, -50%)';
+    document.getElementById('joy-speed').textContent  = '0.0';
+    document.getElementById('joy-rudder').textContent = '0.0';
+    if(manualMode) send({type:'manual_control', speed:0, rudder:0});
+    joyActive = false;
+  }
+
+  jc.addEventListener('touchstart', e => {
+    e.preventDefault(); joyActive=true;
+    const c = getJoyCenter();
+    const t = e.touches[0];
+    moveKnob(c.x, c.y, t.clientX, t.clientY);
+  }, {passive:false});
+  jc.addEventListener('touchmove', e => {
+    e.preventDefault(); if(!joyActive) return;
+    const c = getJoyCenter();
+    const t = e.touches[0];
+    moveKnob(c.x, c.y, t.clientX, t.clientY);
+  }, {passive:false});
+  jc.addEventListener('touchend', () => resetKnob());
+
+  jc.addEventListener('mousedown', e => {
+    joyActive=true;
+    const c = getJoyCenter();
+    moveKnob(c.x, c.y, e.clientX, e.clientY);
+    document.addEventListener('mousemove', onMM);
+    document.addEventListener('mouseup', onMU);
+    function onMM(ev){ const cc=getJoyCenter(); moveKnob(cc.x,cc.y,ev.clientX,ev.clientY); }
+    function onMU(){ document.removeEventListener('mousemove',onMM); document.removeEventListener('mouseup',onMU); resetKnob(); }
+  });
+})();
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function switchTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tabbar-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='nav') { setTimeout(()=>map.invalidateSize(),100); }
+}
+
+function setStatus(type, icon, title, sub) {
+  const b = document.getElementById('status-banner');
+  b.className = 'status-banner '+(type==='alert'?'alert':type==='active'?'active':type==='warn'?'warn':'');
+  document.getElementById('sb-icon').textContent = icon;
+  document.getElementById('sb-title').textContent = title;
+  document.getElementById('sb-sub').textContent = sub;
+}
+
+function showRibbon(text) {
+  document.getElementById('ribbon-text').textContent = text;
+  document.getElementById('alert-ribbon').classList.add('show');
+  setTimeout(hideRibbon, 15000);
+}
+function hideRibbon() { document.getElementById('alert-ribbon').classList.remove('show'); }
+
+function showVictimModal(d) {
+  const modal = document.getElementById('modal-bg');
+  modal.classList.add('show');
+  document.getElementById('modal-conf').textContent = ((d.confidence||0)*100).toFixed(0)+'%';
+  const p = d.position;
+  if(p) document.getElementById('modal-pos').textContent = p.lat.toFixed(4)+',\n'+p.lon.toFixed(4);
+  document.getElementById('modal-time').textContent = new Date().toTimeString().slice(0,8);
+  if(d.frame_base64) {
+    const img = document.getElementById('modal-img');
+    img.src = 'data:image/jpeg;base64,'+d.frame_base64;
+    img.style.display = 'block';
+    document.getElementById('modal-img-ph').style.display = 'none';
+  }
+}
+
+function closeModal()   { document.getElementById('modal-bg').classList.remove('show'); }
+function dismissModal() { closeModal(); victimPending=false; hideRibbon(); log('Alerte ignorée.','warn'); }
+
+function setConnected(on) {
+  const badge = document.getElementById('conn-badge');
+  badge.className = 'conn-badge'+(on?' connected':'');
+  document.getElementById('conn-text').textContent = on ? 'CONNECTÉ' : 'HORS LIGNE';
+}
+
+function log(msg, type='info') {
+  const panel = document.getElementById('log-panel');
+  const t = new Date().toTimeString().slice(0,8);
+  const el = document.createElement('div');
+  el.className = 'log-entry '+type;
+  el.innerHTML = `<span class="log-time">${t}</span><span class="log-msg">${msg}</span>`;
+  panel.insertBefore(el, panel.firstChild);
+  while(panel.children.length > 80) panel.removeChild(panel.lastChild);
+}
+
+// ============================================================
+// DEMO MODE
+// ============================================================
+function activateDemo() {
+  if(demoActive) return;
+  demoActive = true;
+  switchTab('mission', document.querySelector('.tabbar-btn'));
+  log('Mode démo activé (simulation sans bateau)','warn');
+  let t=0;
+  demoInterval = setInterval(()=>{
+    t++;
+    const lat = 36.8200 + Math.sin(t*0.02)*0.002;
+    const lon = 10.1800 + Math.cos(t*0.02)*0.002;
+    const hdg = (t*3)%360;
+    handleTelemetry({
+      position:{ lat, lon, alt:0, fixed:true, speed_kmh:3.5+Math.sin(t*.1)*.5, heading:hdg, roll:Math.sin(t*.2)*3, pitch:Math.cos(t*.15)*2 },
+      solar:{ battery_voltage:12.4+Math.sin(t*.05)*.3, panel_power:50+Math.random()*15, panel_voltage:19.5, battery_current:2.1, daily_energy_wh:320, charge_state:'bulk' },
+      motors:{ speed:.35 },
+      mission_active:false, victim_detected:false,
+      home_position:{lat:36.820,lon:10.180},
+    });
+  }, 1000);
+  // Victime simulée après 8s
+  setTimeout(()=>{
+    if(!demoActive) return;
+    handleAlert({ type:'victim_detected', confidence:.91, position:{lat:36.8218, lon:10.1832} });
+  }, 8000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+log('Application SauvetageBot démarrée','ok');
+log('Tentative de connexion: '+WS_URL,'info');
+connect();
+
+// Auto démo si pas de connexion dans 4s
+setTimeout(()=>{
+  if(!connected && !demoActive) {
+    log('Aucun bateau trouvé — mode démo automatique','warn');
+    activateDemo();
+  }
+}, 4000);
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+---
+title: Interface d'une alerte détaillée avec boutons d'action — _AlerteCard (RescueWave)
+---
+flowchart TB
+    subgraph PHONE["📱 _AlerteCard — Détail alerte"]
+        direction TB
+
+        APP["AppBar  |  🔔 Alertes"]
+
+        subgraph CARD_RED["Alerte #ALT-0042  —  🔴 Détectée (non confirmée)"]
+            direction TB
+            INFO1["🕐  Heure de détection : 09:38:14 — Lundi 12 mai 2026"]
+            INFO2["📍  Lieu : Zone A — Secteur Nord\n       36.7325° N, 3.0875° E"]
+            INFO3["🆔  Référence : #ALT-0042"]
+            PHOTO["📷  [ Capture caméra IA disponible ]"]
+            BTN1[/"✅  Confirmer la prise en charge"\]
+        end
+
+        subgraph CARD_ORA["Alerte #ALT-0041  —  🟠 Mission confirmée (en cours)"]
+            direction TB
+            INFO4["🕐  Heure : 09:21:05"]
+            INFO5["📍  Lieu : Zone B — Plage Centrale"]
+            BTN2[/"🏁  Mission terminée"\]
+        end
+
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊\nTableau"] --- N2["🔔 ●\nAlertes"] --- N3["📋\nHistorique"] --- N4["🛡️\nAdmin"]
+        end
+    end
+
+    APP --> CARD_RED --> CARD_ORA --> NAV
+    INFO1 --> INFO2 --> INFO3 --> PHOTO --> BTN1
+    INFO4 --> INFO5 --> BTN2
+
+    style APP   fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style INFO1 fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style INFO2 fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style INFO3 fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style PHOTO fill:#1B2A3A,color:#7CA5BF,stroke:#0077B6,stroke-dasharray:4
+    style BTN1  fill:#0077B6,color:#fff,stroke:#03071E
+    style INFO4 fill:#1B2A3A,color:#EAF4FB,stroke:#FFB703
+    style INFO5 fill:#1B2A3A,color:#EAF4FB,stroke:#FFB703
+    style BTN2  fill:#FFB703,color:#03071E,stroke:#FF8800
+    style CARD_RED fill:#0D1B2A,stroke:#EF233C
+    style CARD_ORA fill:#0D1B2A,stroke:#FFB703
+    style N2    fill:#0077B6,color:#fff,stroke:#03071E
+    style N1    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N3    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N4    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style NAV   fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px

@@ -1,0 +1,48 @@
+---
+title: Interface du panneau d'administration — AdminPage (RescueWave)
+---
+flowchart TB
+    subgraph PHONE["📱 AdminPage"]
+        direction TB
+
+        APP["AppBar  |  🛡️ Administration"]
+
+        subgraph BANNER["Profil administrateur"]
+            BN["🏆  Administrateur Principal\n    Karim Benali"]
+        end
+
+        subgraph MEM["👥 Membres gérés  (adminCin == currentUser.cin)"]
+            direction TB
+            M1["🏊  Ahmed Meziane  ·  Maître-Nageur  |  [✕ Révoquer]"]
+            M2["🏊  Sara Hamdi  ·  Maître-Nageur  |  [✕ Révoquer]"]
+        end
+
+        subgraph SEC["🛡️ Administrateurs secondaires  (visible : adminPrincipal seulement)"]
+            A1["🛡️  Youcef Dali  ·  Admin Secondaire  |  [✕ Révoquer]"]
+        end
+
+        ADD[/"👤+  Ajouter un membre"\]
+
+        subgraph NAV["Barre de navigation"]
+            direction LR
+            N1["📊\nTableau"] --- N2["🔔\nAlertes"] --- N3["📋\nHistorique"] --- N4["🛡️ ●\nAdmin"]
+        end
+    end
+
+    APP --> BANNER --> MEM --> SEC --> ADD --> NAV
+
+    style APP   fill:#0D1B2A,color:#EAF4FB,stroke:#0077B6
+    style BN    fill:#7B2D8B,color:#fff,stroke:#B455C8
+    style M1    fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style M2    fill:#1B2A3A,color:#EAF4FB,stroke:#0077B6
+    style A1    fill:#1B2A3A,color:#EAF4FB,stroke:#00B4D8
+    style ADD   fill:#0D1B2A,color:#00B4D8,stroke:#00B4D8
+    style BANNER fill:#0D1B2A,stroke:#B455C8
+    style MEM   fill:#0D1B2A,stroke:#0077B6
+    style SEC   fill:#0D1B2A,stroke:#00B4D8
+    style N4    fill:#0077B6,color:#fff,stroke:#03071E
+    style N1    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N2    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style N3    fill:#0D1B2A,color:#7CA5BF,stroke:#03071E
+    style NAV   fill:#0D1B2A,stroke:#0077B6
+    style PHONE fill:#03071E,stroke:#00B4D8,stroke-width:2px

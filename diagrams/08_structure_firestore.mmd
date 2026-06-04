@@ -1,0 +1,35 @@
+---
+title: Structure des collections Firestore — RescueWave
+---
+flowchart TB
+    RPi["🤖 Raspberry Pi\n(Bateau IA)"]
+    APP["📱 Application Mobile\n(AppState)"]
+
+    subgraph FB["🔥 Firebase Firestore"]
+        subgraph CU["📁 Collection : users"]
+            UD["📄 Document clé : cin\n─────────────────────\ncin : String\nnom : String\nprenom : String\nrole : String\nadminCin : String ∣ null"]
+        end
+
+        subgraph CA["📁 Collection : alertes"]
+            AD["📄 Document clé : alerteId\n─────────────────────\nheure : Timestamp\nlieu : String\nphotoUrl : String ∣ null\nconfirmee : Boolean\ntraitee : Boolean"]
+        end
+
+        subgraph CH["📁 Collection : historique"]
+            HD["📄 Document clé : historiqueId\n─────────────────────\ndate : Timestamp\nage : Integer\nlieu : String\ndescription : String\nmaitreCin : String\nsurvivant : Boolean"]
+        end
+    end
+
+    RPi -- "Écrit les alertes (IA)" --> AD
+    APP -- "SET / DELETE" --> UD
+    APP -- "UPDATE confirmee / traitee" --> AD
+    APP -- "SET (fiche victime)" --> HD
+    AD -- "StreamSnapshot temps réel" --> APP
+    HD -- "StreamSnapshot temps réel" --> APP
+    UD -- "Lecture unique au démarrage" --> APP
+
+    style FB fill:#fff8f0,stroke:#FF6B35,stroke-width:2px
+    style CU fill:#e8f4fd,stroke:#0077B6
+    style CA fill:#fce4ec,stroke:#EF233C
+    style CH fill:#e8f8f5,stroke:#06D6A0
+    style RPi fill:#FFB703,color:#03071E,stroke:#03071E
+    style APP fill:#0077B6,color:#fff,stroke:#03071E

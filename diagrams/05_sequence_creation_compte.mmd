@@ -1,0 +1,33 @@
+---
+title: Séquence — Création d'un compte membre (RescueWave)
+---
+sequenceDiagram
+    actor A as Administrateur
+    participant UI as Panneau Admin
+    participant F as Formulaire _AddMemberDialog
+    participant AS as AppState
+    participant DB as Firestore (users)
+
+    A->>UI: Clique "Ajouter un membre"
+    UI->>F: Ouvre le formulaire (boîte de dialogue)
+
+    Note over F: Champs : CIN, Nom, Prénom<br/>Rôle (liste déroulante :<br/>Maître-Nageur / Admin Secondaire)
+
+    A->>F: Remplit tous les champs et sélectionne le rôle
+    A->>F: Clique "Ajouter"
+    F->>F: Valide les champs (cin, nom, prenom non vides)
+
+    alt Champs incomplets
+        F-->>A: ❌ "Tous les champs sont obligatoires"
+    else Formulaire valide
+        F->>AS: ajouterMembre(AppUser)
+        AS->>DB: SET users/{cin}<br/>{ cin, nom, prenom, role, adminCin }
+        DB-->>AS: ✅ Document créé avec succès
+        AS->>AS: Ajoute le membre à la liste locale users
+        AS->>AS: notifyListeners()
+        AS-->>F: Future complété
+        F-->>UI: Ferme le formulaire
+        UI-->>A: ✅ Liste des membres mise à jour
+
+        Note over A: Le nouveau membre peut se connecter<br/>immédiatement avec son CIN
+    end

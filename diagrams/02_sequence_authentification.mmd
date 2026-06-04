@@ -1,0 +1,31 @@
+---
+title: Séquence — Authentification utilisateur (RescueWave)
+---
+sequenceDiagram
+    actor U as Utilisateur
+    participant S as Écran Connexion
+    participant AS as AppState
+    participant DB as Firestore (users)
+
+    U->>S: Saisit son CIN + mot de passe
+    S->>AS: login(cin, motDePasse)
+    AS->>AS: Vérifie motDePasse == motDePasseGeneral
+
+    alt Mot de passe incorrect
+        AS-->>S: Retourne false
+        S-->>U: ❌ "CIN ou mot de passe incorrect"
+    else Mot de passe valide
+        Note over AS: La liste users est déjà<br/>chargée en mémoire<br/>depuis le démarrage
+        AS->>AS: Recherche users où u.cin == cin
+
+        alt CIN introuvable
+            AS-->>S: Retourne false
+            S-->>U: ❌ "CIN ou mot de passe incorrect"
+        else CIN trouvé
+            AS->>AS: currentUser = AppUser trouvé
+            AS->>AS: notifyListeners()
+            AS-->>S: Retourne true
+            Note over S: RescueBoatApp reconstruit<br/>son arbre de widgets
+            S-->>U: ✅ Redirige vers HomeScreen<br/>(Dashboard selon le rôle)
+        end
+    end

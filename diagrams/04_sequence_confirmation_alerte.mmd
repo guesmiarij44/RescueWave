@@ -1,0 +1,37 @@
+---
+title: Séquence — Confirmation et clôture d'une alerte (RescueWave)
+---
+sequenceDiagram
+    actor U as Maître-Nageur (ou Administrateur)
+    participant UI as Interface Alertes
+    participant AS as AppState
+    participant DB as Firestore (alertes)
+
+    Note over UI: Alerte visible — statut "Détectée" 🔴
+
+    rect rgb(255, 243, 224)
+        Note over U,DB: ── Étape 1 : Prise en charge ──
+        U->>UI: Clique "Confirmer"
+        UI->>AS: confirmerAlerte(alerte.id)
+        AS->>DB: UPDATE alertes/{id}<br/>{ confirmee: true }
+        DB-->>AS: ✅ Succès
+        Note over DB,AS: Le StreamSnapshot déclenche<br/>automatiquement une mise à jour
+        AS->>AS: Reçoit snapshot mis à jour<br/>notifyListeners()
+        AS-->>UI: Reconstruit la carte alerte
+        UI-->>U: Statut → "Mission confirmée" 🟠
+    end
+
+    Note over U: Le sauveteur se rend<br/>sur le lieu de l'incident
+
+    rect rgb(232, 245, 233)
+        Note over U,DB: ── Étape 2 : Clôture après intervention ──
+        U->>UI: Clique "Mission terminée"
+        UI->>AS: traiterAlerte(alerte.id)
+        AS->>DB: UPDATE alertes/{id}<br/>{ traitee: true }
+        DB-->>AS: ✅ Succès
+        AS->>AS: Reçoit snapshot mis à jour<br/>notifyListeners()
+        AS-->>UI: Reconstruit la carte alerte
+        UI-->>U: Statut → "Mission accomplie" 🟢
+    end
+
+    Note over U: L'alerte est archivée<br/>et disparaît des alertes actives

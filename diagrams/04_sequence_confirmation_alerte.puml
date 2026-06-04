@@ -1,0 +1,49 @@
+@startuml Séquence - Confirmation et clôture d'une alerte
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequence {
+  ParticipantBackgroundColor #E8F4FD
+  ParticipantBorderColor #0077B6
+  ArrowColor #0077B6
+  ActorBackgroundColor #D0EAF8
+  ActorBorderColor #0077B6
+  LifeLineBorderColor #0077B6
+}
+skinparam noteBackgroundColor #FFF9C4
+skinparam noteBorderColor #FFB703
+
+title Confirmation et clôture d'une alerte — RescueWave
+
+actor "Maître-Nageur\n(ou Administrateur)" as U
+participant "Interface\nAlertes" as UI
+participant "AppState" as State
+database "Firestore\ncollection : alertes" as DB
+
+note over UI : Une alerte est visible\nstatut : "Alerte détectée"\n(bordure rouge)
+
+== Étape 1 : Prise en charge de l'alerte ==
+
+U -> UI : Clique sur le bouton\n"Confirmer"
+UI -> State : confirmerAlerte(alerte.id)
+State -> DB : UPDATE alertes/{id}\n{ confirmee: true }
+DB --> State : Succès
+note over DB,State : Le StreamSnapshot déclenche\nautomatiquement une mise à jour
+State -> State : Reçoit snapshot mis à jour\nnotifyListeners()
+State --> UI : Reconstruit la carte alerte
+UI --> U : Statut : "Mission confirmée"\n(bordure orange)
+
+note over U : Le sauveteur se\ndéplace vers le lieu\nde l'incident
+
+== Étape 2 : Clôture après intervention ==
+
+U -> UI : Clique sur le bouton\n"Mission terminée"
+UI -> State : traiterAlerte(alerte.id)
+State -> DB : UPDATE alertes/{id}\n{ traitee: true }
+DB --> State : Succès
+State -> State : Reçoit snapshot mis à jour\nnotifyListeners()
+State --> UI : Reconstruit la carte alerte
+UI --> U : Statut : "Mission accomplie"\n(bordure verte)
+
+note over U : L'alerte est archivée\net disparaît de la liste\ndes alertes actives
+
+@enduml

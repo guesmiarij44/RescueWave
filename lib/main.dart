@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:firebase_core/firebase_core.dart';
+import 'pages/control_page.dart';
+import 'pages/energy_page.dart';
+import 'pages/camera_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
@@ -83,6 +86,9 @@ class AlerteNoyade {
   final DateTime heure;
   final String lieu;
   final String? photoUrl;
+  final double? confidence;
+  final double? lat;
+  final double? lon;
   bool confirmee;
   bool traitee;
 
@@ -91,6 +97,9 @@ class AlerteNoyade {
     required this.heure,
     required this.lieu,
     this.photoUrl,
+    this.confidence,
+    this.lat,
+    this.lon,
     this.confirmee = false,
     this.traitee = false,
   });
@@ -102,6 +111,9 @@ class AlerteNoyade {
       heure: (d['heure'] as Timestamp).toDate(),
       lieu: d['lieu'] as String,
       photoUrl: d['photoUrl'] as String?,
+      confidence: (d['confidence'] as num?)?.toDouble(),
+      lat: (d['lat'] as num?)?.toDouble(),
+      lon: (d['lon'] as num?)?.toDouble(),
       confirmee: d['confirmee'] as bool? ?? false,
       traitee: d['traitee'] as bool? ?? false,
     );
@@ -142,6 +154,69 @@ class HistoriqueVictime {
 }
 
 // ─────────────────────────────────────────────
+// TELEMETRY MODEL
+// ─────────────────────────────────────────────
+
+class TelemetryData {
+  final double speed;
+  final double heading;
+  final double lat;
+  final double lon;
+  final double batteryVoltage;
+  final double batteryPct;
+  final double solarPower;
+  final double solarVoltage;
+  final double solarCurrent;
+  final double solarDailyWh;
+  final String solarState;
+  final String? cameraFrame;
+  final bool missionActive;
+  final double? homeLat;
+  final double? homeLon;
+
+  const TelemetryData({
+    this.speed = 0,
+    this.heading = 0,
+    this.lat = 0,
+    this.lon = 0,
+    this.batteryVoltage = 0,
+    this.batteryPct = 0,
+    this.solarPower = 0,
+    this.solarVoltage = 0,
+    this.solarCurrent = 0,
+    this.solarDailyWh = 0,
+    this.solarState = '—',
+    this.cameraFrame,
+    this.missionActive = false,
+    this.homeLat,
+    this.homeLon,
+  });
+
+  factory TelemetryData.fromFirestore(DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>? ?? {};
+    final bv = (d['battery_voltage'] as num?)?.toDouble() ?? 0;
+    final pct = ((bv - 10.0) / (13.6 - 10.0) * 100).clamp(0.0, 100.0);
+    return TelemetryData(
+      speed: (d['speed_kmh'] as num?)?.toDouble() ?? 0,
+      heading: (d['heading'] as num?)?.toDouble() ?? 0,
+      lat: (d['lat'] as num?)?.toDouble() ?? 0,
+      lon: (d['lon'] as num?)?.toDouble() ?? 0,
+      batteryVoltage: bv,
+      batteryPct: pct,
+      solarPower: (d['solar_panel_power'] as num?)?.toDouble() ?? 0,
+      solarVoltage: (d['solar_panel_voltage'] as num?)?.toDouble() ?? 0,
+      solarCurrent: (d['solar_battery_current'] as num?)?.toDouble() ?? 0,
+      solarDailyWh: (d['solar_daily_wh'] as num?)?.toDouble() ?? 0,
+      solarState: d['solar_state'] as String? ?? '—',
+      cameraFrame: d['camera_frame_b64'] as String?,
+      missionActive: d['mission_active'] as bool? ?? false,
+      homeLat: (d['home_lat'] as num?)?.toDouble(),
+      homeLon: (d['home_lon'] as num?)?.toDouble(),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
 // APP STATE (Firestore-backed)
 // ─────────────────────────────────────────────
 
@@ -155,6 +230,8 @@ class AppState extends ChangeNotifier {
   final _db = FirebaseFirestore.instance;
   StreamSubscription<QuerySnapshot>? _alertesSub;
   StreamSubscription<QuerySnapshot>? _historiqueSub;
+  StreamSubscription<DocumentSnapshot>? _telemetrySub;
+  TelemetryData? telemetry;
 
   static const String motDePasseGeneral = 'sauvetage2026';
 
@@ -166,6 +243,7 @@ class AppState extends ChangeNotifier {
     await _loadUsers();
     _listenToAlertes();
     _listenToHistorique();
+    _listenToTelemetry();
     isLoading = false;
     notifyListeners();
   }
@@ -201,6 +279,7 @@ class AppState extends ChangeNotifier {
   void dispose() {
     _alertesSub?.cancel();
     _historiqueSub?.cancel();
+    _telemetrySub?.cancel();
     super.dispose();
   }
 
@@ -236,6 +315,26 @@ class AppState extends ChangeNotifier {
     await _db.collection('users').doc(cin).delete();
     users = users.where((u) => u.cin != cin).toList();
     notifyListeners();
+  }
+
+  Future<void> sendCommand(Map<String, dynamic> data) async {
+    await _db.collection('commands').add({
+      ...data,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  void _listenToTelemetry() {
+    _telemetrySub = _db
+        .collection('telemetry')
+        .doc('current')
+        .snapshots()
+        .listen((snap) {
+          if (snap.exists) {
+            telemetry = TelemetryData.fromFirestore(snap);
+            notifyListeners();
+          }
+        });
   }
 }
 
@@ -670,28 +769,54 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  void _goTo(int i) => setState(() => _index = i);
+  void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
 
   @override
   Widget build(BuildContext context) {
     final user = widget.appState.currentUser!;
     final isAdmin = user.role != UserRole.maitreDuNauge;
+    final alertCount = widget.appState.alertes.where((a) => !a.traitee).length;
 
     final pages = [
-      DashboardPage(appState: widget.appState),
-      AlertesPage(appState: widget.appState),
-      HistoriquePage(appState: widget.appState),
-      if (isAdmin) AdminPage(appState: widget.appState),
+      DashboardPage(appState: widget.appState, onNavigate: _goTo, openDrawer: _openDrawer), // 0
+      ControlPage(appState: widget.appState, openDrawer: _openDrawer),                        // 1
+      CameraPage(appState: widget.appState, openDrawer: _openDrawer),                         // 2
+      EnergiePage(appState: widget.appState, openDrawer: _openDrawer),                        // 3
+      AlertesPage(appState: widget.appState),                        // 4
+      HistoriquePage(appState: widget.appState),                     // 5
+      AdminPage(appState: widget.appState),                          // 6
     ];
 
-    return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        child: KeyedSubtree(key: ValueKey(_index), child: pages[_index]),
-      ),
-      bottomNavigationBar: _BottomNav(
-        currentIndex: _index,
-        isAdmin: isAdmin,
-        onTap: (i) => setState(() => _index = i),
+    // navMap: bottom-nav position → page index
+    final List<int> navMap = isAdmin ? [0, 1, 2, 4, 5, 6] : [0, 1, 2, 4, 5];
+    final navSelected = navMap.contains(_index) ? navMap.indexOf(_index) : 0;
+
+    return _AlertListener(
+      appState: widget.appState,
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: _AppDrawer(
+          appState: widget.appState,
+          currentIndex: _index,
+          isAdmin: isAdmin,
+          onSelect: (i) {
+            _goTo(i);
+            Navigator.of(context).pop();
+          },
+        ),
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: KeyedSubtree(key: ValueKey(_index), child: pages[_index]),
+        ),
+        bottomNavigationBar: _BottomNav(
+          navSelected: navSelected,
+          isAdmin: isAdmin,
+          alertCount: alertCount,
+          onTap: (navI) => _goTo(navMap[navI]),
+        ),
       ),
     );
   }
@@ -702,13 +827,15 @@ class _HomeScreenState extends State<HomeScreen> {
 // ─────────────────────────────────────────────
 
 class _BottomNav extends StatelessWidget {
-  final int currentIndex;
+  final int navSelected;
   final bool isAdmin;
+  final int alertCount;
   final void Function(int) onTap;
   const _BottomNav({
-    required this.currentIndex,
+    required this.navSelected,
     required this.isAdmin,
     required this.onTap,
+    this.alertCount = 0,
   });
 
   @override
@@ -729,29 +856,33 @@ class _BottomNav extends StatelessWidget {
       ),
       child: NavigationBar(
         backgroundColor: Colors.transparent,
-        selectedIndex: currentIndex,
+        selectedIndex: navSelected,
         onDestinationSelected: onTap,
         indicatorColor: AppColors.primary.withOpacity(0.2),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         destinations: [
           const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(
-              Icons.dashboard_rounded,
-              color: AppColors.accent,
-            ),
-            label: 'Tableau de bord',
+            selectedIcon: Icon(Icons.dashboard_rounded, color: AppColors.accent),
+            label: 'Tableau',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.gamepad_outlined),
+            selectedIcon: Icon(Icons.gamepad_rounded, color: AppColors.accent),
+            label: 'Contrôle',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.videocam_outlined),
+            selectedIcon: Icon(Icons.videocam_rounded, color: AppColors.accent),
+            label: 'Caméra',
           ),
           NavigationDestination(
             icon: Badge(
-              isLabelVisible: true,
-              label: const Text('1'),
+              isLabelVisible: alertCount > 0,
+              label: Text('$alertCount'),
               child: const Icon(Icons.notifications_outlined),
             ),
-            selectedIcon: const Icon(
-              Icons.notifications_rounded,
-              color: AppColors.danger,
-            ),
+            selectedIcon: const Icon(Icons.notifications_rounded, color: AppColors.danger),
             label: 'Alertes',
           ),
           const NavigationDestination(
@@ -762,13 +893,330 @@ class _BottomNav extends StatelessWidget {
           if (isAdmin)
             const NavigationDestination(
               icon: Icon(Icons.admin_panel_settings_outlined),
-              selectedIcon: Icon(
-                Icons.admin_panel_settings_rounded,
-                color: AppColors.warning,
-              ),
+              selectedIcon: Icon(Icons.admin_panel_settings_rounded, color: AppColors.warning),
               label: 'Admin',
             ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// APP DRAWER (SIDEBAR)
+// ─────────────────────────────────────────────
+
+class _AppDrawer extends StatelessWidget {
+  final AppState appState;
+  final int currentIndex;
+  final bool isAdmin;
+  final void Function(int) onSelect;
+  const _AppDrawer({
+    required this.appState,
+    required this.currentIndex,
+    required this.isAdmin,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final user = appState.currentUser!;
+    return Drawer(
+      backgroundColor: AppColors.surface,
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 20,
+              left: 20, right: 20, bottom: 20,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF03184A), AppColors.surface],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48, height: 48,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(colors: [AppColors.primary, AppColors.accent]),
+                  ),
+                  child: const Icon(Icons.directions_boat_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('RescueWave', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1)),
+                      Text('${user.prenom} ${user.nom}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                _drawerItem(context, 0, Icons.dashboard_rounded, 'Tableau de bord'),
+                _drawerItem(context, 1, Icons.gamepad_rounded, 'Contrôle du bateau'),
+                _drawerItem(context, 2, Icons.videocam_rounded, 'Caméra'),
+                _drawerItem(context, 3, Icons.bolt_rounded, 'Énergie & Batterie'),
+                _drawerItem(context, 4, Icons.notifications_rounded, 'Alertes'),
+                _drawerItem(context, 5, Icons.history_rounded, 'Historique'),
+                if (isAdmin) ...[  
+                  const Divider(color: AppColors.surfaceLight, indent: 16, endIndent: 16),
+                  _drawerItem(context, 6, Icons.admin_panel_settings_rounded, 'Administration'),
+                ],
+              ],
+            ),
+          ),
+          const Divider(color: AppColors.surfaceLight),
+          ListTile(
+            leading: const Icon(Icons.logout_rounded, color: AppColors.danger),
+            title: const Text('Déconnexion', style: TextStyle(color: AppColors.danger)),
+            onTap: () {
+              Navigator.of(context).pop();
+              appState.logout();
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _drawerItem(BuildContext ctx, int idx, IconData icon, String label) {
+    final selected = currentIndex == idx;
+    return ListTile(
+      leading: Icon(icon, color: selected ? AppColors.accent : AppColors.textMuted, size: 22),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: selected ? AppColors.accent : AppColors.text,
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 14,
+        ),
+      ),
+      selected: selected,
+      selectedTileColor: AppColors.primary.withOpacity(0.15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      onTap: () => onSelect(idx),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// ALERT LISTENER (Victim Popup)
+// ─────────────────────────────────────────────
+
+class _AlertListener extends StatefulWidget {
+  final AppState appState;
+  final Widget child;
+  const _AlertListener({required this.appState, required this.child});
+  @override
+  State<_AlertListener> createState() => _AlertListenerState();
+}
+
+class _AlertListenerState extends State<_AlertListener> {
+  String? _lastShownId;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.appState.addListener(_checkAlerts);
+  }
+
+  @override
+  void dispose() {
+    widget.appState.removeListener(_checkAlerts);
+    super.dispose();
+  }
+
+  void _checkAlerts() {
+    final pending = widget.appState.alertes
+        .where((a) => !a.confirmee && !a.traitee)
+        .toList();
+    if (pending.isNotEmpty && pending.first.id != _lastShownId) {
+      _lastShownId = pending.first.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showPopup(pending.first);
+      });
+    }
+  }
+
+  void _showPopup(AlerteNoyade alerte) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _VictimAlertDialog(alerte: alerte, appState: widget.appState),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+// ─────────────────────────────────────────────
+// VICTIM ALERT DIALOG
+// ─────────────────────────────────────────────
+
+class _VictimAlertDialog extends StatelessWidget {
+  final AlerteNoyade alerte;
+  final AppState appState;
+  const _VictimAlertDialog({required this.alerte, required this.appState});
+
+  @override
+  Widget build(BuildContext context) {
+    final batt = appState.telemetry;
+    final confText = alerte.confidence != null
+        ? '${(alerte.confidence! * 100).toStringAsFixed(0)}%'
+        : '—';
+    final timeStr =
+        '${alerte.heure.hour.toString().padLeft(2, '0')}:${alerte.heure.minute.toString().padLeft(2, '0')}:${alerte.heure.second.toString().padLeft(2, '0')}';
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(16),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.danger, width: 1.5),
+          boxShadow: [BoxShadow(color: AppColors.danger.withOpacity(0.25), blurRadius: 30)],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: const BoxDecoration(
+                color: AppColors.danger,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(19)),
+              ),
+              child: Row(
+                children: [
+                  const Text('🚨', style: TextStyle(fontSize: 28)),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('VICTIME DÉTECTÉE', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                        SizedBox(height: 2),
+                        Text('Confirmez pour lancer la mission de sauvetage', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      _infoBox('Confiance IA', confText, red: true),
+                      const SizedBox(width: 10),
+                      _infoBox('Position GPS', alerte.lieu, small: true),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _infoBox('Horodatage', timeStr, small: true),
+                      const SizedBox(width: 10),
+                      _infoBox(
+                        'Batterie',
+                        batt != null ? '${batt.batteryVoltage.toStringAsFixed(1)}V' : '—',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        appState.confirmerAlerte(alerte.id);
+                        appState.sendCommand({'type': 'confirm_rescue', 'alert_id': alerte.id});
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: AppColors.dark,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('✅  CONFIRMER', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        appState.sendCommand({'type': 'cancel_mission'});
+                        Navigator.pop(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        side: const BorderSide(color: AppColors.danger),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('✖  ANNULER', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Ignorer cette alerte', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            ),
+            const SizedBox(height: 6),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoBox(String label, String val, {bool red = false, bool small = false}) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 10, letterSpacing: 0.5)),
+            const SizedBox(height: 4),
+            Text(
+              val,
+              style: TextStyle(
+                color: red ? AppColors.danger : AppColors.accent,
+                fontSize: small ? 12 : 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -780,7 +1228,9 @@ class _BottomNav extends StatelessWidget {
 
 class DashboardPage extends StatelessWidget {
   final AppState appState;
-  const DashboardPage({super.key, required this.appState});
+  final void Function(int)? onNavigate;
+  final VoidCallback? openDrawer;
+  const DashboardPage({super.key, required this.appState, this.onNavigate, this.openDrawer});
 
   @override
   Widget build(BuildContext context) {
@@ -796,6 +1246,12 @@ class DashboardPage extends StatelessWidget {
             floating: false,
             pinned: true,
             backgroundColor: AppColors.surface,
+            leading: openDrawer != null
+                ? IconButton(
+                    icon: const Icon(Icons.menu_rounded, color: AppColors.textMuted),
+                    onPressed: openDrawer,
+                  )
+                : null,
             actions: [
               IconButton(
                 icon: const Icon(
@@ -876,6 +1332,18 @@ class DashboardPage extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _BoatStatusCard(),
+                const SizedBox(height: 16),
+                // Live telemetry metrics
+                AnimatedBuilder(
+                  animation: appState,
+                  builder: (_, __) {
+                    final t = appState.telemetry;
+                    return _MetricsRow(telemetry: t);
+                  },
+                ),
+                const SizedBox(height: 16),
+                // Quick access cards
+                if (onNavigate != null) ..._buildQuickAccess(),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -971,6 +1439,28 @@ class DashboardPage extends StatelessWidget {
       case UserRole.maitreDuNauge:
         return 'Maître-Nageur';
     }
+  }
+
+  List<Widget> _buildQuickAccess() {
+    final items = [
+      _QuickCard(icon: Icons.gamepad_rounded, label: 'Contrôle', sub: 'Joystick & Mission', color: AppColors.accent, onTap: () => onNavigate!(1)),
+      _QuickCard(icon: Icons.videocam_rounded, label: 'Caméra', sub: 'Flux en direct', color: AppColors.danger, onTap: () => onNavigate!(2)),
+      _QuickCard(icon: Icons.bolt_rounded, label: 'Énergie', sub: 'Batterie & Solaire', color: AppColors.warning, onTap: () => onNavigate!(3)),
+      _QuickCard(icon: Icons.notifications_rounded, label: 'Alertes', sub: 'Victimes détectées', color: AppColors.success, onTap: () => onNavigate!(4)),
+    ];
+    return [
+      const _SectionTitle('⚡  Accès rapide'),
+      const SizedBox(height: 10),
+      GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 2.2,
+        children: items,
+      ),
+    ];
   }
 }
 
@@ -1417,6 +1907,104 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
 // ─────────────────────────────────────────────
 // REUSABLE WIDGETS
 // ─────────────────────────────────────────────
+
+class _MetricsRow extends StatelessWidget {
+  final TelemetryData? telemetry;
+  const _MetricsRow({this.telemetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = telemetry;
+    final bv = t?.batteryVoltage ?? 0;
+    Color battColor = bv < 10.0
+        ? AppColors.danger
+        : bv < 10.8
+            ? AppColors.warning
+            : AppColors.success;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          _metric('Vitesse', t != null ? t.speed.toStringAsFixed(1) : '—', 'km/h', AppColors.accent),
+          _divider(),
+          _metric('Cap', t != null ? t.heading.toStringAsFixed(0) : '—', 'deg', AppColors.accent),
+          _divider(),
+          _metric('Batterie', t != null ? t.batteryVoltage.toStringAsFixed(1) : '—', 'V', battColor),
+          _divider(),
+          _metric('Solaire', t != null ? t.solarPower.toStringAsFixed(0) : '—', 'W', AppColors.warning),
+        ],
+      ),
+    );
+  }
+
+  Widget _metric(String label, String val, String unit, Color color) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          children: [
+            Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 9, letterSpacing: 0.5)),
+            const SizedBox(height: 4),
+            Text(val, style: TextStyle(color: color, fontSize: 17, fontWeight: FontWeight.w900)),
+            Text(unit, style: const TextStyle(color: AppColors.textMuted, fontSize: 9)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() => Container(width: 1, height: 40, color: AppColors.surfaceLight);
+}
+
+class _QuickCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String sub;
+  final Color color;
+  final VoidCallback onTap;
+  const _QuickCard({required this.icon, required this.label, required this.sub, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withOpacity(0.25)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
+                    Text(sub, style: const TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.5), size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _BoatStatusCard extends StatefulWidget {
   @override
